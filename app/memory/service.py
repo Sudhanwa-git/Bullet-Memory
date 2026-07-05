@@ -148,6 +148,9 @@ class MemoryService:
             session_id=request.session_id,
             source_type=SourceType.AGENT_EVENT,
         )
+        if is_new:
+            await self._auto_export([memory])
+            
         logger.info("memory_service.agent_event.done", user_id=request.user_id, is_new=is_new)
         return memory
 
@@ -175,6 +178,9 @@ class MemoryService:
         embedding = await self._embedder.embed(memory.content)
         memory = await self._db.create_direct_memory(memory)
         await self._vector_store.upsert(memory_id=memory.id, user_id=memory.user_id, embedding=embedding, content=memory.content)
+        
+        await self._auto_export([memory])
+        
         logger.info("memory_service.store_direct.done", memory_id=memory.id)
         return memory
 
@@ -282,9 +288,10 @@ class MemoryService:
                 c.tags = list(set(c.tags + extra_tags))
 
         stored = 0
+        new_memories = []
         for candidate in accepted:
             embedding = await self._embedder.embed(candidate.content)
-            _, is_new = await self._updater.deduplicate_or_create(
+            memory, is_new = await self._updater.deduplicate_or_create(
                 user_id=user_id,
                 candidate=candidate,
                 embedding=embedding,
@@ -294,6 +301,32 @@ class MemoryService:
             )
             if is_new:
                 stored += 1
+                new_memories.append(memory)
+
+        if new_memories:
+            await self._auto_export(new_memories)
 
         logger.info("memory_service.pipeline.done", user_id=user_id, stored=stored)
         return stored
+
+    async def _auto_export(self, memories: list[Memory]) -> None:
+        """Automatically append new memories to a JSONL dataset in the background."""
+        import asyncio
+        import json
+        from pathlib import Path
+        
+        async def _write():
+            for m in memories:
+                # We'll use the generic OpenAI format for the auto-dataset
+                record = self._exporter._to_openai_record(m)
+                
+                # Use a central datasets directory
+                dataset_dir = Path("datasets")
+                dataset_dir.mkdir(exist_ok=True)
+                
+                file_path = dataset_dir / f"{m.user_id}_finetune.jsonl"
+                with open(file_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(record.model_dump(), ensure_ascii=False) + "\n")
+                    
+        # Fire and forget
+        asyncio.create_task(_write())
