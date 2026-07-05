@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bullet-memory-sdk"
+version = "1.0.0"
+description = "Pluggable persistent memory SDK for LLM agents — powered by Bullet Memory"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Bullet Memory", email = "hello@bullet-memory.dev" }
+]
+keywords = ["llm", "memory", "agents", "ai", "rag", "fine-tuning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "respx"]
+
+[project.urls]
+Homepage = "https://github.com/Sudhanwa-git/Bullet-Memory"
+Repository = "https://github.com/Sudhanwa-git/Bullet-Memory"
+Issues = "https://github.com/Sudhanwa-git/Bullet-Memory/issues"
