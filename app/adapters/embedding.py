@@ -78,8 +78,9 @@ class OllamaEmbeddingAdapter(EmbeddingAdapter):
         return response.json()["embedding"]
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """Ollama doesn't support batch embeddings natively — iterate sequentially."""
-        return [await self.embed(t) for t in texts]
+        """Ollama doesn't support batch embeddings natively — use asyncio.gather for concurrency."""
+        import asyncio
+        return list(await asyncio.gather(*(self.embed(t) for t in texts)))
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────
