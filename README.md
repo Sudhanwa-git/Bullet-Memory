@@ -5,7 +5,7 @@
 
 ---
 
-## 🧠 What is Bullet Memory?
+##  What is Bullet Memory?
 
 Traditional LLMs have amnesia—every prompt starts from zero. 
 
@@ -28,7 +28,7 @@ graph TD
 
 ---
 
-## 🚀 Why Use It?
+## Why Use It?
 
 * **Agentic Memory**: Let your agents build their own long-term context across multiple sessions.
 * **Semantic Search**: It doesn't just keyword match; it understands the *meaning* of the memories to retrieve exactly what the LLM needs at that exact moment.
@@ -37,7 +37,7 @@ graph TD
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Install
 
@@ -63,7 +63,7 @@ uvicorn app.main:app --reload
 
 ---
 
-## 🔌 Integrating With Your Agents
+##  Integrating With Your Agents
 
 You can use the built-in UI to chat with it, but Bullet Memory is designed to be the backend for *your* agents.
 
@@ -97,7 +97,7 @@ Content-Type: application/json
 
 ---
 
-## 📂 Where is my Data?
+##  Where is my Data?
 
 Your data belongs to you, stored entirely locally.
 
@@ -107,7 +107,7 @@ Your data belongs to you, stored entirely locally.
 
 ---
 
-## 🛠️ Built With
+##  Built With
 
 * **FastAPI** for blazing fast endpoints.
 * **ChromaDB** for local vector embeddings.
