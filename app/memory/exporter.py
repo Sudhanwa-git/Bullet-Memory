@@ -11,6 +11,7 @@ Usage:
     records = await exporter.export(user_id="u1", format="openai", min_importance=0.7)
     await exporter.write_jsonl(records, path="./dataset.jsonl")
 """
+
 from __future__ import annotations
 
 import json
@@ -110,7 +111,11 @@ class FineTuneExporter:
         assistant_content = memory.content
 
         return FineTuneRecord(
-            messages=[system_msg, FineTuneMessage(role="user", content=user_content), FineTuneMessage(role="assistant", content=assistant_content)],
+            messages=[
+                system_msg,
+                FineTuneMessage(role="user", content=user_content),
+                FineTuneMessage(role="assistant", content=assistant_content),
+            ],
             metadata={
                 "memory_id": memory.id,
                 "category": memory.category.value,
@@ -130,7 +135,10 @@ class FineTuneExporter:
 
         return FineTuneRecord(
             messages=[
-                FineTuneMessage(role="user", content=f"### Instruction:\n{instruction}\n\n### Input:\n{input_text}\n\n### Response:"),
+                FineTuneMessage(
+                    role="user",
+                    content=f"### Instruction:\n{instruction}\n\n### Input:\n{input_text}\n\n### Response:",
+                ),
                 FineTuneMessage(role="assistant", content=output_text),
             ],
             metadata={"memory_id": memory.id, "category": memory.category.value},

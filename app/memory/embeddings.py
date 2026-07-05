@@ -4,6 +4,7 @@ Embedding Generator — wraps the configured embedding provider.
 Responsible for generating vector representations for memory content.
 Embedding generation happens AFTER importance scoring to avoid wasting API calls.
 """
+
 from __future__ import annotations
 
 import time

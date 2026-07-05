@@ -3,6 +3,7 @@ Utility helpers.
 
 Kept intentionally small — heavy logic belongs in the memory or core packages.
 """
+
 from __future__ import annotations
 
 import hashlib

@@ -3,6 +3,7 @@ Memory Extractor — converts conversation text into structured ExtractedMemory 
 
 Uses the configured LLM with structured JSON output.
 """
+
 from __future__ import annotations
 
 import json
@@ -33,9 +34,7 @@ class MemoryExtractor:
         assistant_response: str,
         source_text: str | None = None,
     ) -> list[ExtractedMemory]:
-        conversation = (
-            f"User: {user_message}\n\nAssistant: {assistant_response}"
-        )
+        conversation = f"User: {user_message}\n\nAssistant: {assistant_response}"
         actual_source = source_text or conversation
 
         logger.debug("extractor.extract.start", chars=len(conversation))

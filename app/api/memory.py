@@ -1,12 +1,14 @@
 """
 Memory CRUD, search, and fine-tuning export endpoints.
 """
+
 from __future__ import annotations
+
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
-from typing import Any
 
 from app.api.deps import get_memory_service
 from app.memory.models import Memory, MemoryCategory, SourceType
@@ -16,6 +18,7 @@ router = APIRouter(prefix="/memories", tags=["memories"])
 
 
 # ── Response schemas ──────────────────────────────────────────────────────────
+
 
 class MemoryResponse(BaseModel):
     id: str
@@ -36,7 +39,7 @@ class MemoryResponse(BaseModel):
     last_accessed_at: str | None
 
     @classmethod
-    def from_memory(cls, m: Memory) -> "MemoryResponse":
+    def from_memory(cls, m: Memory) -> MemoryResponse:
         return cls(
             id=m.id,
             user_id=m.user_id,
@@ -70,7 +73,10 @@ class SearchRequest(BaseModel):
 
 # ── CRUD Endpoints ────────────────────────────────────────────────────────────
 
-@router.get("/{user_id}", response_model=MemoryListResponse, summary="List memories with optional filters")
+
+@router.get(
+    "/{user_id}", response_model=MemoryListResponse, summary="List memories with optional filters"
+)
 async def list_memories(
     user_id: str,
     agent_id: str | None = Query(default=None),
@@ -143,6 +149,7 @@ async def search_memories(
 
 # ── Fine-Tuning Export Endpoints ──────────────────────────────────────────────
 
+
 @router.get(
     "/export/{user_id}",
     response_class=PlainTextResponse,
@@ -167,7 +174,9 @@ async def export_memories(
     Returns a plain JSONL file — download directly and use with your fine-tuning pipeline.
     """
     if format not in ("openai", "instruction", "jsonl"):
-        raise HTTPException(status_code=400, detail=f"Invalid format {format!r}. Use: openai | instruction | jsonl")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid format {format!r}. Use: openai | instruction | jsonl"
+        )
 
     records = await service.export_dataset(
         user_id=user_id,

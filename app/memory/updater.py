@@ -6,6 +6,7 @@ the existing record is updated rather than duplicated.
 
 The goal is one accurate representation of each fact.
 """
+
 from __future__ import annotations
 
 import structlog
@@ -92,7 +93,9 @@ class MemoryUpdater:
         Update an existing memory with new content if the incoming fact is newer/more confident.
         """
         # Prefer the higher-confidence or more descriptive version
-        if candidate.confidence >= existing.confidence or len(candidate.content) > len(existing.content):
+        if candidate.confidence >= existing.confidence or len(candidate.content) > len(
+            existing.content
+        ):
             updated = await self._db.update_memory(
                 memory_id=existing.id,
                 content=candidate.content,

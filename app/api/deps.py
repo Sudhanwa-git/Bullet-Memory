@@ -4,6 +4,7 @@ Dependency injection helpers for FastAPI.
 All adapters and services are created once per application startup
 and reused across requests via FastAPI's dependency system.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache

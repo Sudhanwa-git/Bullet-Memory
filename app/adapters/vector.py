@@ -4,19 +4,25 @@ Vector Store Adapter — provider-agnostic interface for semantic search.
 Supports ChromaDB (persistent) and an in-memory fallback for testing.
 Swap providers by implementing VectorStoreAdapter and updating get_vector_store().
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import structlog
 
 from app.core.config import settings
 from app.memory.models import Memory
 
+if TYPE_CHECKING:
+    from app.adapters.database import DatabaseAdapter
+
 logger = structlog.get_logger(__name__)
 
 
 # ── Abstract interface ────────────────────────────────────────────────────────
+
 
 class VectorStoreAdapter(ABC):
     @abstractmethod
@@ -44,11 +50,13 @@ class VectorStoreAdapter(ABC):
 
 # ── ChromaDB Implementation ───────────────────────────────────────────────────
 
+
 class ChromaVectorStore(VectorStoreAdapter):
     _COLLECTION_NAME = "bullet_memories"
 
     def __init__(self) -> None:
         import chromadb
+
         self._client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
         self._collection = self._client.get_or_create_collection(
             name=self._COLLECTION_NAME,
@@ -79,8 +87,6 @@ class ChromaVectorStore(VectorStoreAdapter):
         top_k: int,
         threshold: float,
     ) -> list[Memory]:
-        from app.adapters.database import DatabaseAdapter
-
         # ChromaDB raises if n_results > collection count
         collection_count = self._collection.count()
         if collection_count == 0:
@@ -96,20 +102,23 @@ class ChromaVectorStore(VectorStoreAdapter):
         ids = result.get("ids", [[]])[0]
         distances = result.get("distances", [[]])[0]
 
-        memories: list[Memory] = []
         db = _get_db()
-
+        # Filter valid IDs based on similarity threshold
+        valid_ids = []
         for mem_id, distance in zip(ids, distances):
             similarity = 1.0 - distance  # ChromaDB cosine: distance = 1 - similarity
             if similarity >= threshold:
-                memory = await db.get_memory(mem_id)
-                if memory:
-                    memories.append(memory)
-
+                valid_ids.append(mem_id)
+                
+        if not valid_ids:
+            return []
+            
+        memories = await db.get_memories_by_ids(valid_ids)
         return memories
 
 
 # ── In-Memory Implementation (testing / CI) ───────────────────────────────────
+
 
 class InMemoryVectorStore(VectorStoreAdapter):
     """
@@ -157,18 +166,20 @@ class InMemoryVectorStore(VectorStoreAdapter):
 
 # ── Lazy DB singleton (avoids circular imports) ───────────────────────────────
 
-_db_instance: "DatabaseAdapter | None" = None  # type: ignore[name-defined]
+_db_instance: DatabaseAdapter | None = None
 
 
 def _get_db():  # type: ignore[return]
     global _db_instance
     if _db_instance is None:
         from app.adapters.database import DatabaseAdapter
+
         _db_instance = DatabaseAdapter()
     return _db_instance
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────
+
 
 def get_vector_store() -> VectorStoreAdapter:
     provider = settings.VECTOR_STORE_PROVIDER.lower()

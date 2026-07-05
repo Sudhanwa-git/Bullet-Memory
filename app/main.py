@@ -3,16 +3,18 @@ Application entry point.
 
 Initialises the FastAPI app, mounts routers, and configures startup / shutdown hooks.
 """
+
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import os
+from fastapi.staticfiles import StaticFiles
+
 from app.api.router import router
 from app.core.config import settings
 from app.core.logging import configure_logging
@@ -29,6 +31,7 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 
     # Eagerly initialise the DB so tables exist before the first request
     from app.adapters.database import DatabaseAdapter
+
     db = DatabaseAdapter()
     await db.initialise()
     logger.info("bullet_memory.db.ready")
@@ -57,7 +60,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(router)
-    
+
     # Mount frontend static files
     frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
     if os.path.exists(frontend_path):

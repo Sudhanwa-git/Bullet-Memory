@@ -4,6 +4,7 @@ Memory Retriever — semantic search over the vector store.
 Retrieval is intentionally separate from storage.
 Keyword fallback can be added without touching this module.
 """
+
 from __future__ import annotations
 
 import time

@@ -3,6 +3,7 @@ Memory Orchestrator — central coordinator for every chat request.
 
 Retrieval  →  Prompt Build  →  LLM Call  →  Memory Pipeline  →  Response
 """
+
 from __future__ import annotations
 
 import time
@@ -83,7 +84,9 @@ class MemoryOrchestrator:
             "latency_ms": total_ms,
         }
 
-    async def process_memory_background(self, user_id: str, message: str, response_text: str) -> None:
+    async def process_memory_background(
+        self, user_id: str, message: str, response_text: str
+    ) -> None:
         """
         Background task: Extract and persist new memories from the conversation.
         """
@@ -99,7 +102,9 @@ class MemoryOrchestrator:
         except Exception as e:
             log.error("orchestrator.memory_pipeline.error", error=str(e))
 
-    async def chat_stream(self, user_id: str, message: str, system_prompt: str | None = None, background_tasks = None):
+    async def chat_stream(
+        self, user_id: str, message: str, system_prompt: str | None = None, background_tasks=None
+    ):
         """
         Streaming chat lifecycle:
         1. Retrieve memories
@@ -108,6 +113,7 @@ class MemoryOrchestrator:
         4. Schedule background extraction when complete
         """
         import json
+
         t0 = time.perf_counter()
         log = logger.bind(user_id=user_id)
 
@@ -118,7 +124,7 @@ class MemoryOrchestrator:
             top_k=settings.TOP_K_RETRIEVAL,
             threshold=settings.SIMILARITY_THRESHOLD,
         )
-        
+
         # Yield the retrieved context as the first SSE chunk
         retrieved_context = [{"category": m.category, "content": m.content} for m in memories]
         yield f"data: {json.dumps({'type': 'context', 'data': retrieved_context})}\n\n"
@@ -126,14 +132,14 @@ class MemoryOrchestrator:
         system = self._build_system_prompt(system_prompt or DEFAULT_SYSTEM_PROMPT, memories)
 
         log.info("orchestrator.llm_stream.start", model=settings.LLM_MODEL)
-        
+
         full_response = []
         async for chunk in self._llm.stream_chat(system=system, user=message):
             full_response.append(chunk)
             yield f"data: {json.dumps({'type': 'token', 'data': chunk})}\n\n"
-            
+
         final_text = "".join(full_response)
-        
+
         if background_tasks:
             background_tasks.add_task(
                 self.process_memory_background,
@@ -141,8 +147,11 @@ class MemoryOrchestrator:
                 message=message,
                 response_text=final_text,
             )
-            
-        log.info("orchestrator.chat_stream.done", total_latency_ms=round((time.perf_counter() - t0) * 1000, 2))
+
+        log.info(
+            "orchestrator.chat_stream.done",
+            total_latency_ms=round((time.perf_counter() - t0) * 1000, 2),
+        )
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 

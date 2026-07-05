@@ -8,6 +8,7 @@ Endpoints:
 
 This is the primary interface for external agents to feed data into Bullet Memory.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/ingest", tags=["ingest"])
 
 
 # ── Raw text ingestion ────────────────────────────────────────────────────────
+
 
 @router.post("/raw", summary="Ingest raw text and extract memories from it")
 async def ingest_raw(
@@ -36,6 +38,7 @@ async def ingest_raw(
       - Feeding conversation logs from external systems
       - Batch-loading historical data
     """
+
     async def _run():
         stored = await service.process_raw(
             user_id=request.user_id,
@@ -86,6 +89,7 @@ async def ingest_raw_sync(
 
 # ── Agent event ingestion ─────────────────────────────────────────────────────
 
+
 @router.post("/event", summary="Push a structured agent event as a memory")
 async def ingest_event(
     request: AgentEventRequest,
@@ -113,6 +117,7 @@ async def ingest_event(
 
 
 # ── Direct memory insertion ───────────────────────────────────────────────────
+
 
 @router.post("/direct", summary="Directly insert a pre-formed memory")
 async def ingest_direct(

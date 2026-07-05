@@ -6,6 +6,7 @@ importance value already provided by the LLM extractor.
 
 Future improvements could apply rule-based boosts, recency decay, or ML scoring.
 """
+
 from __future__ import annotations
 
 import structlog

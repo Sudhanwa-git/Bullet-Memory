@@ -1,12 +1,14 @@
 """
 Chat endpoint — the primary user-facing API for memory-augmented LLM responses.
 """
+
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from typing import Any
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Any
 
 from app.api.deps import get_orchestrator
 from app.core.orchestrator import MemoryOrchestrator
@@ -15,6 +17,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 # ── Request / Response schemas ────────────────────────────────────────────────
+
 
 class ChatRequest(BaseModel):
     user_id: str = Field(..., min_length=1, description="Unique identifier for the user/agent")
@@ -31,6 +34,35 @@ class ChatResponse(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
+@router.post("", summary="Send a memory-augmented chat message (Synchronous JSON)")
+async def chat(
+    request: ChatRequest,
+    background_tasks: BackgroundTasks,
+    orchestrator: MemoryOrchestrator = Depends(get_orchestrator),
+) -> ChatResponse:
+    """
+    Standard JSON chat endpoint. Returns LLM response instantly, 
+    and handles all memory extraction in the background.
+    """
+    try:
+        result = await orchestrator.chat(
+            user_id=request.user_id,
+            message=request.message,
+            system_prompt=request.system_prompt,
+        )
+        
+        background_tasks.add_task(
+            orchestrator.process_memory_background,
+            user_id=request.user_id,
+            message=request.message,
+            response_text=result["response"],
+        )
+        
+        return ChatResponse(**result)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
 
 @router.post("/stream", summary="Send a memory-augmented chat message via SSE stream")
 async def chat_stream(
@@ -49,7 +81,7 @@ async def chat_stream(
                 system_prompt=request.system_prompt,
                 background_tasks=background_tasks,
             ),
-            media_type="text/event-stream"
+            media_type="text/event-stream",
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

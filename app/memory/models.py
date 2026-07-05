@@ -8,17 +8,18 @@ The schema is intentionally rich to support:
   - Session-level context grouping
   - Memory access tracking for relevance weighting
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # ── Enumerations ──────────────────────────────────────────────────────────────
+
 
 class MemoryCategory(StrEnum):
     # Personal context
@@ -41,6 +42,7 @@ class MemoryCategory(StrEnum):
 
 class SourceType(StrEnum):
     """Origin of the memory — critical for filtering and fine-tune dataset curation."""
+
     CHAT = "chat"
     AGENT_EVENT = "agent_event"
     TOOL_CALL = "tool_call"
@@ -57,6 +59,7 @@ class ImportanceLevel(StrEnum):
 
 # ── Core Memory Model ─────────────────────────────────────────────────────────
 
+
 class Memory(BaseModel):
     """
     A single structured memory unit.
@@ -71,30 +74,39 @@ class Memory(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     agent_id: str | None = Field(default=None, description="Originating agent identifier")
-    session_id: str | None = Field(default=None, description="Groups memories from the same session/run")
+    session_id: str | None = Field(
+        default=None, description="Groups memories from the same session/run"
+    )
     category: MemoryCategory = MemoryCategory.GENERAL
     source_type: SourceType = SourceType.CHAT
     content: str = Field(description="Distilled, self-contained fact")
-    source_text: str | None = Field(default=None, description="Raw original text this memory was extracted from")
+    source_text: str | None = Field(
+        default=None, description="Raw original text this memory was extracted from"
+    )
     importance: float = Field(ge=0.0, le=1.0)
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
-    tags: list[str] = Field(default_factory=list, description="Free-form keyword tags for fast filtering")
-    access_count: int = Field(default=0, description="Number of times this memory has been retrieved")
+    tags: list[str] = Field(
+        default_factory=list, description="Free-form keyword tags for fast filtering"
+    )
+    access_count: int = Field(
+        default=0, description="Number of times this memory has been retrieved"
+    )
     embedding: list[float] | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_accessed_at: datetime | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
         json_encoders={
             datetime: lambda v: v.isoformat(),
-        }
+        },
     )
 
 
 # ── Extracted / Candidate Memory (before persistence) ────────────────────────
+
 
 class ExtractedMemory(BaseModel):
     """Raw memory candidate produced by the extractor before scoring/embedding."""
@@ -109,8 +121,10 @@ class ExtractedMemory(BaseModel):
 
 # ── Ingest Request Models ─────────────────────────────────────────────────────
 
+
 class RawIngestRequest(BaseModel):
     """Push any raw text to be extracted and stored as memories."""
+
     user_id: str
     text: str = Field(..., min_length=1, description="Raw text to extract memories from")
     agent_id: str | None = None
@@ -121,6 +135,7 @@ class RawIngestRequest(BaseModel):
 
 class AgentEventRequest(BaseModel):
     """Push a structured agent event (tool call, observation, etc.)."""
+
     user_id: str
     agent_id: str
     session_id: str | None = None
@@ -133,6 +148,7 @@ class AgentEventRequest(BaseModel):
 
 class DirectMemoryRequest(BaseModel):
     """Directly insert pre-formed memories — no LLM extraction."""
+
     user_id: str
     agent_id: str | None = None
     session_id: str | None = None
@@ -147,12 +163,14 @@ class DirectMemoryRequest(BaseModel):
 
 # ── Search / Retrieval ────────────────────────────────────────────────────────
 
+
 class MemorySearchResult(BaseModel):
     memory: Memory
     similarity: float = Field(ge=0.0, le=1.0)
 
 
 # ── Fine-tune Dataset ─────────────────────────────────────────────────────────
+
 
 class FineTuneMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
@@ -161,5 +179,6 @@ class FineTuneMessage(BaseModel):
 
 class FineTuneRecord(BaseModel):
     """Single record in an OpenAI-compatible fine-tuning dataset."""
+
     messages: list[FineTuneMessage]
     metadata: dict[str, Any] = Field(default_factory=dict)

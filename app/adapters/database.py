@@ -10,10 +10,11 @@ Schema is intentionally rich to support:
   - Fine-tuning export (source_text preserved)
   - Retrieval tracking (access_count, last_accessed_at)
 """
+
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text, select
@@ -27,6 +28,7 @@ logger = structlog.get_logger(__name__)
 
 
 # ── ORM Schema ────────────────────────────────────────────────────────────────
+
 
 class Base(DeclarativeBase):
     pass
@@ -55,6 +57,7 @@ class MemoryRow(Base):
 
 # ── Adapter ───────────────────────────────────────────────────────────────────
 
+
 class DatabaseAdapter:
     def __init__(self) -> None:
         self._engine = create_async_engine(settings.DATABASE_URL, echo=False)
@@ -78,7 +81,8 @@ class DatabaseAdapter:
         source_type: SourceType = SourceType.CHAT,
     ) -> Memory:
         import uuid
-        now = datetime.now(timezone.utc)
+
+        now = datetime.now(UTC)
         memory = Memory(
             id=str(uuid.uuid4()),
             user_id=user_id,
@@ -173,13 +177,23 @@ class DatabaseAdapter:
             result = await session.execute(q)
             return [self._to_model(r) for r in result.scalars()]
 
+    async def get_memories_by_ids(self, memory_ids: list[str]) -> list[Memory]:
+        """Fetch multiple memories by their IDs in a single query."""
+        if not memory_ids:
+            return []
+        async with self._session_factory() as session:
+            stmt = select(MemoryRow).where(MemoryRow.id.in_(memory_ids))
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [self._to_model(row) for row in rows]
+
     async def increment_access_count(self, memory_id: str) -> None:
         """Track how often a memory is retrieved."""
         async with self._session_factory() as session:
             row = await session.get(MemoryRow, memory_id)
             if row:
                 row.access_count = (row.access_count or 0) + 1
-                row.last_accessed_at = datetime.now(timezone.utc)
+                row.last_accessed_at = datetime.now(UTC)
                 await session.commit()
 
     async def update_memory(
@@ -196,7 +210,7 @@ class DatabaseAdapter:
             row.content = content
             row.importance = importance
             row.confidence = confidence
-            row.updated_at = datetime.now(timezone.utc)
+            row.updated_at = datetime.now(UTC)
             await session.commit()
             await session.refresh(row)
         return self._to_model(row)

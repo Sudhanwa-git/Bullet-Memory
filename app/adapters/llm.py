@@ -4,6 +4,7 @@ LLM Adapter — provider-agnostic interface for language model calls.
 Add new providers by implementing LLMAdapter and registering in get_llm_adapter().
 Supported providers: openai | ollama
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -18,6 +19,7 @@ logger = structlog.get_logger(__name__)
 
 # ── Abstract interface ────────────────────────────────────────────────────────
 
+
 class LLMAdapter(ABC):
     @abstractmethod
     async def complete(self, system: str, user: str) -> str:
@@ -30,9 +32,11 @@ class LLMAdapter(ABC):
 
 # ── OpenAI Implementation ─────────────────────────────────────────────────────
 
+
 class OpenAIAdapter(LLMAdapter):
     def __init__(self) -> None:
         from openai import AsyncOpenAI
+
         self._client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self._model = settings.LLM_MODEL
 
@@ -51,13 +55,14 @@ class OpenAIAdapter(LLMAdapter):
             temperature=0.7,
         )
         return response.choices[0].message.content or ""
-        
+
     async def stream_chat(self, system: str, user: str):
         # OpenAI Streaming fallback (not currently used)
         raise NotImplementedError("Streaming not yet implemented for OpenAI")
 
 
 # ── Ollama Implementation ─────────────────────────────────────────────────────
+
 
 class OllamaAdapter(LLMAdapter):
     """
@@ -67,6 +72,7 @@ class OllamaAdapter(LLMAdapter):
 
     def __init__(self) -> None:
         import httpx
+
         self._base_url = settings.OLLAMA_BASE_URL.rstrip("/")
         self._model = settings.LLM_MODEL
         self._client = httpx.AsyncClient(timeout=120.0)
@@ -113,6 +119,7 @@ class OllamaAdapter(LLMAdapter):
 
     async def stream_chat(self, system: str, user: str):
         import json
+
         payload = {
             "model": self._model,
             "messages": [
@@ -127,8 +134,10 @@ class OllamaAdapter(LLMAdapter):
                 "num_ctx": 2048,
             },
         }
-        
-        async with self._client.stream("POST", f"{self._base_url}/api/chat", json=payload) as response:
+
+        async with self._client.stream(
+            "POST", f"{self._base_url}/api/chat", json=payload
+        ) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line:
@@ -143,6 +152,7 @@ class OllamaAdapter(LLMAdapter):
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────
+
 
 def get_llm_adapter() -> LLMAdapter:
     provider = settings.LLM_PROVIDER.lower()

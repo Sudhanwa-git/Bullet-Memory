@@ -1,11 +1,12 @@
 """
 Main API router — mounts all sub-routers and the health check.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api import chat, memory, ingest
+from app.api import chat, ingest, memory
 from app.core.config import settings
 
 router = APIRouter()

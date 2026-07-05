@@ -4,6 +4,7 @@ Embedding Adapter — provider-agnostic interface for generating vector embeddin
 Swap providers by implementing EmbeddingAdapter and updating get_embedding_adapter().
 Supported providers: openai | ollama
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -18,6 +19,7 @@ logger = structlog.get_logger(__name__)
 
 # ── Abstract interface ────────────────────────────────────────────────────────
 
+
 class EmbeddingAdapter(ABC):
     @abstractmethod
     async def embed(self, text: str) -> list[float]:
@@ -30,9 +32,11 @@ class EmbeddingAdapter(ABC):
 
 # ── OpenAI Implementation ─────────────────────────────────────────────────────
 
+
 class OpenAIEmbeddingAdapter(EmbeddingAdapter):
     def __init__(self) -> None:
         from openai import AsyncOpenAI
+
         self._client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self._model = settings.EMBEDDING_MODEL
 
@@ -52,6 +56,7 @@ class OpenAIEmbeddingAdapter(EmbeddingAdapter):
 
 # ── Ollama Embedding Implementation ───────────────────────────────────────────────
 
+
 class OllamaEmbeddingAdapter(EmbeddingAdapter):
     """
     Generates embeddings using a locally running Ollama model.
@@ -60,6 +65,7 @@ class OllamaEmbeddingAdapter(EmbeddingAdapter):
 
     def __init__(self) -> None:
         import httpx
+
         self._base_url = settings.OLLAMA_BASE_URL.rstrip("/")
         self._model = settings.EMBEDDING_MODEL
         self._client = httpx.AsyncClient(timeout=60.0)
@@ -80,10 +86,12 @@ class OllamaEmbeddingAdapter(EmbeddingAdapter):
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Ollama doesn't support batch embeddings natively — use asyncio.gather for concurrency."""
         import asyncio
+
         return list(await asyncio.gather(*(self.embed(t) for t in texts)))
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────
+
 
 def get_embedding_adapter() -> EmbeddingAdapter:
     provider = settings.EMBEDDING_PROVIDER.lower()

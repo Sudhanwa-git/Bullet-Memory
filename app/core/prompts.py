@@ -1,6 +1,7 @@
 """
 System prompt templates used by the Memory Extractor and Prompt Builder.
 """
+
 from __future__ import annotations
 
 # ── Memory Extraction ─────────────────────────────────────────────────────────

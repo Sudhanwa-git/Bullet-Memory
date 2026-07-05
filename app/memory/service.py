@@ -10,10 +10,11 @@ Enhanced to support:
   - Access count tracking
   - Fine-tuning dataset export
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 
@@ -150,7 +151,7 @@ class MemoryService:
         )
         if is_new:
             await self._auto_export([memory])
-            
+
         logger.info("memory_service.agent_event.done", user_id=request.user_id, is_new=is_new)
         return memory
 
@@ -159,7 +160,7 @@ class MemoryService:
         Directly insert a pre-formed memory without LLM extraction.
         Useful for programmatic ingestion via the SDK.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         memory = Memory(
             id=str(uuid.uuid4()),
             user_id=request.user_id,
@@ -177,10 +178,12 @@ class MemoryService:
         )
         embedding = await self._embedder.embed(memory.content)
         memory = await self._db.create_direct_memory(memory)
-        await self._vector_store.upsert(memory_id=memory.id, user_id=memory.user_id, embedding=embedding, content=memory.content)
-        
+        await self._vector_store.upsert(
+            memory_id=memory.id, user_id=memory.user_id, embedding=embedding, content=memory.content
+        )
+
         await self._auto_export([memory])
-        
+
         logger.info("memory_service.store_direct.done", memory_id=memory.id)
         return memory
 
@@ -197,9 +200,10 @@ class MemoryService:
         memories = await self._retriever.retrieve(
             user_id=user_id, query=query, top_k=top_k, threshold=threshold
         )
+        import asyncio
         # Track access asynchronously (fire and forget via background — don't block retrieval)
         for m in memories:
-            await self._db.increment_access_count(m.id)
+            asyncio.create_task(self._db.increment_access_count(m.id))
         return memories
 
     async def get_all(
@@ -235,7 +239,9 @@ class MemoryService:
 
     async def search(self, user_id: str, query: str, top_k: int = 10) -> list[Memory]:
         """Semantic search without similarity threshold."""
-        return await self._retriever.retrieve(user_id=user_id, query=query, top_k=top_k, threshold=0.0)
+        return await self._retriever.retrieve(
+            user_id=user_id, query=query, top_k=top_k, threshold=0.0
+        )
 
     # ── Export ────────────────────────────────────────────────────────────────
 
@@ -289,7 +295,10 @@ class MemoryService:
 
         stored = 0
         new_memories = []
-        for candidate in accepted:
+        
+        import asyncio
+        
+        async def process_candidate(candidate):
             embedding = await self._embedder.embed(candidate.content)
             memory, is_new = await self._updater.deduplicate_or_create(
                 user_id=user_id,
@@ -299,6 +308,11 @@ class MemoryService:
                 session_id=session_id,
                 source_type=source_type,
             )
+            return memory, is_new
+
+        results = await asyncio.gather(*(process_candidate(c) for c in accepted))
+        
+        for memory, is_new in results:
             if is_new:
                 stored += 1
                 new_memories.append(memory)
@@ -314,19 +328,19 @@ class MemoryService:
         import asyncio
         import json
         from pathlib import Path
-        
+
         async def _write():
             for m in memories:
                 # We'll use the generic OpenAI format for the auto-dataset
                 record = self._exporter._to_openai_record(m)
-                
+
                 # Use a central datasets directory
                 dataset_dir = Path("datasets")
                 dataset_dir.mkdir(exist_ok=True)
-                
+
                 file_path = dataset_dir / f"{m.user_id}_finetune.jsonl"
                 with open(file_path, "a", encoding="utf-8") as f:
                     f.write(json.dumps(record.model_dump(), ensure_ascii=False) + "\n")
-                    
+
         # Fire and forget
         asyncio.create_task(_write())

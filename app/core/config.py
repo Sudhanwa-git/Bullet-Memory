@@ -4,6 +4,7 @@ Centralised application configuration.
 All values are read from environment variables (or a .env file).
 Changing provider or threshold behaviour requires only .env edits.
 """
+
 from __future__ import annotations
 
 from pydantic import Field
@@ -19,12 +20,16 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = Field(default="")
 
     # ── Ollama ───────────────────────────────────────────────────────────────────
-    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", description="Base URL for local Ollama server")
+    OLLAMA_BASE_URL: str = Field(
+        default="http://localhost:11434", description="Base URL for local Ollama server"
+    )
 
     # ── Embeddings ────────────────────────────────────────────────────────────
     EMBEDDING_PROVIDER: str = Field(default="ollama", description="openai | ollama")
     EMBEDDING_MODEL: str = Field(default="nomic-embed-text")
-    EMBEDDING_DIMENSIONS: int = Field(default=768) # nomic-embed-text=768, text-embedding-3-small=1536
+    EMBEDDING_DIMENSIONS: int = Field(
+        default=768
+    )  # nomic-embed-text=768, text-embedding-3-small=1536
 
     # ── Database ──────────────────────────────────────────────────────────────
     DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./bullet_memory.db")
