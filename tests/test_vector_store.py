@@ -26,7 +26,7 @@ def store() -> InMemoryVectorStore:
 def memory_a() -> Memory:
     return Memory(
         user_id="alice",
-        category=MemoryCategory.SKILLS,
+        category=MemoryCategory.TECHNOLOGIES,
         content="Expert in Python",
         importance=0.9,
         confidence=0.95,

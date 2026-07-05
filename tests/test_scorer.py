@@ -11,7 +11,7 @@ from app.memory.scorer import ImportanceScorer
 
 def _make_candidate(importance: float) -> ExtractedMemory:
     return ExtractedMemory(
-        category=MemoryCategory.SKILLS,
+        category=MemoryCategory.TECHNOLOGIES,
         content="Some fact",
         importance=importance,
         confidence=0.9,

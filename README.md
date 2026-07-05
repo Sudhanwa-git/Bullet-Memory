@@ -1,59 +1,43 @@
-# Bullet Memory
-
-**A lightweight, production-oriented semantic memory engine for LLM agents.**
-
-Bullet Memory sits between your application and an LLM, automatically retrieving relevant knowledge before inference and learning new knowledge after inference.
-
----
-
-## What It Does
-
-Traditional LLMs are stateless — every request starts from zero context.
-
-Bullet Memory introduces a **persistent semantic memory layer** that continuously learns structured knowledge from conversations.
-
-```
-User: "I've been building AI infrastructure with Python and FastAPI."
-↓
-Stored Memory:
-  Category:   Skills
-  Content:    Experienced with Python and FastAPI
-  Importance: 0.9
-  Confidence: 0.95
-```
-
-The system remembers **knowledge**, not chat history.
+<div align="center">
+  <h1>BULLET MEMORY</h1>
+  <p><b>The Agentic Memory OS. Build AI that remembers, learns, and dynamically fine-tunes itself.</b></p>
+</div>
 
 ---
 
-## Architecture
+## 🧠 What is Bullet Memory?
 
-```
-Client Application
-       │
-       ▼
- FastAPI Endpoints
-       │
-       ▼
-Memory Orchestrator
-       │
-  ┌────┴────────────────┐
-  ▼                     ▼
-Memory Service      LLM Provider
-  │
-  ├── Extractor     ← converts text → structured facts
-  ├── Scorer        ← filters by importance threshold
-  ├── Embedder      ← generates vector representations
-  ├── Retriever     ← semantic similarity search
-  └── Updater       ← deduplicates / merges conflicts
-       │
-       ▼
- SQLite + ChromaDB
+Traditional LLMs have amnesia—every prompt starts from zero. 
+
+**Bullet Memory** is a lightweight, production-grade **Memory OS** for your agents. It sits between your application and your LLM, acting as a persistent brain. It doesn't just store chat logs; it extracts, deduplicates, and permanently remembers high-signal *knowledge* (facts, skills, preferences, and agent observations).
+
+As your agents run, Bullet Memory simultaneously streams this extracted knowledge into a continuous **auto-generated fine-tuning dataset** straight to your local disk.
+
+### The Magic:
+
+```mermaid
+graph TD
+    A[Your App / AI Agent] -->|Chats & Agent Events| B(Bullet Memory OS)
+    B --> C{Semantic Extraction}
+    C -->|Stores JSON| E[Relational SQLite DB]
+    C -->|Extracts Math Vectors| D[Chroma Vector DB]
+    E --> F((Auto Fine-Tuning Datasets))
+    D -->|Retrieves Perfect Context| G[Augmented LLM Response]
+    G --> A
 ```
 
 ---
 
-## Quick Start
+## 🚀 Why Use It?
+
+* **Agentic Memory**: Let your agents build their own long-term context across multiple sessions.
+* **Semantic Search**: It doesn't just keyword match; it understands the *meaning* of the memories to retrieve exactly what the LLM needs at that exact moment.
+* **Continuous Fine-Tuning**: Literally an OS that produces training data. Every memory created is automatically appended to a ready-to-train JSONL dataset on your machine.
+* **Lightning Fast**: Designed for local inference using optimizations like concurrent Ollama batch processing.
+
+---
+
+## ⚡ Quick Start
 
 ### 1. Install
 
@@ -65,23 +49,40 @@ pip install -e ".[dev]"
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum, set your OPENAI_API_KEY
+# Set your keys or point it to your local Ollama instance!
 ```
 
-### 3. Run
+### 3. Run the OS
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-The API is now available at `http://localhost:8000`.  
-Interactive docs: `http://localhost:8000/docs`
+> **UI Dashboard:** `http://localhost:8000`  
+> **API Docs:** `http://localhost:8000/docs`
 
 ---
 
-## API Reference
+## 🔌 Integrating With Your Agents
 
-### Chat (memory-augmented)
+You can use the built-in UI to chat with it, but Bullet Memory is designed to be the backend for *your* agents.
+
+### Example: Storing an Agent Event
+
+```http
+POST /ingest/event
+Content-Type: application/json
+
+{
+  "user_id": "alice",
+  "agent_id": "research-agent-01",
+  "event_type": "observation",
+  "content": "Alice prefers Python over JavaScript for backend tasks.",
+  "importance": 0.95
+}
+```
+
+### Example: Memory-Augmented Chat Generation
 
 ```http
 POST /chat
@@ -89,206 +90,30 @@ Content-Type: application/json
 
 {
   "user_id": "alice",
-  "message": "What programming languages do I know?",
-  "system_prompt": null
+  "message": "Write a quick script for my backend."
 }
 ```
-
-**Response:**
-```json
-{
-  "response": "Based on what I know about you, you're experienced with Python and FastAPI...",
-  "memories_retrieved": 3,
-  "memories_stored": 1,
-  "latency_ms": 1240.5
-}
-```
+*The engine will intercept this, invisibly fetch the memory about Alice preferring Python, inject it into the prompt, and respond with Python code.*
 
 ---
 
-### List Memories
+## 📂 Where is my Data?
 
-```http
-GET /memories/{user_id}
-```
+Your data belongs to you, stored entirely locally.
 
-### Get Single Memory
-
-```http
-GET /memories/detail/{memory_id}
-```
-
-### Delete Memory
-
-```http
-DELETE /memories/{memory_id}
-```
-
-### Semantic Search
-
-```http
-POST /memories/search
-Content-Type: application/json
-
-{
-  "user_id": "alice",
-  "query": "programming skills",
-  "top_k": 5
-}
-```
-
-### Health Check
-
-```http
-GET /health
-```
-
-### Active Configuration
-
-```http
-GET /config
-```
+* **`bullet_memory_v5.db`**: The structured relational database. Viewable with any standard SQLite browser.
+* **`chroma_db_v5/`**: The local vector store for semantic similarity.
+* **`datasets/`**: The goldmine. The auto-generated JSONL files containing your OpenAI-formatted fine-tuning datasets, continuously updated in the background.
 
 ---
 
-## Folder Structure
+## 🛠️ Built With
 
-```
-bullet-memory/
-├── app/
-│   ├── api/
-│   │   ├── chat.py          # POST /chat endpoint
-│   │   ├── memory.py        # Memory CRUD + search endpoints
-│   │   ├── router.py        # Root router + health/config
-│   │   └── deps.py          # FastAPI dependency injection
-│   │
-│   ├── core/
-│   │   ├── orchestrator.py  # Request lifecycle coordinator
-│   │   ├── config.py        # Pydantic-settings configuration
-│   │   ├── logging.py       # Structlog setup
-│   │   └── prompts.py       # All LLM prompt templates
-│   │
-│   ├── memory/
-│   │   ├── service.py       # MemoryService facade (entry point)
-│   │   ├── extractor.py     # Conversation → structured facts
-│   │   ├── scorer.py        # Importance threshold filter
-│   │   ├── embeddings.py    # Embedding generation wrapper
-│   │   ├── retriever.py     # Vector similarity search
-│   │   ├── updater.py       # Deduplication + conflict resolution
-│   │   └── models.py        # Canonical Pydantic models
-│   │
-│   ├── adapters/
-│   │   ├── llm.py           # LLM provider (OpenAI + interface)
-│   │   ├── embedding.py     # Embedding provider (OpenAI + interface)
-│   │   ├── database.py      # SQLite via SQLAlchemy (async)
-│   │   └── vector.py        # ChromaDB + in-memory implementations
-│   │
-│   ├── utils/
-│   │   └── helpers.py
-│   │
-│   └── main.py              # FastAPI app factory
-│
-├── tests/
-│   ├── test_scorer.py
-│   ├── test_extractor.py
-│   └── test_vector_store.py
-│
-├── examples/
-│   └── basic_chat.py
-│
-├── pyproject.toml
-├── .env.example
-├── Dockerfile
-└── docker-compose.yml
-```
+* **FastAPI** for blazing fast endpoints.
+* **ChromaDB** for local vector embeddings.
+* **SQLAlchemy** (Async SQLite) for structured relational persistence.
+* **Ollama & OpenAI** adapters included out-of-the-box.
 
 ---
 
-## Configuration
-
-All configuration is through environment variables (or `.env`):
-
-| Variable | Default | Description |
-|---|---|---|
-| `OPENAI_API_KEY` | — | Required for OpenAI LLM + embeddings |
-| `LLM_PROVIDER` | `openai` | LLM backend |
-| `LLM_MODEL` | `gpt-4o-mini` | Model name |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
-| `IMPORTANCE_THRESHOLD` | `0.4` | Minimum importance to persist (0–1) |
-| `SIMILARITY_THRESHOLD` | `0.75` | Minimum similarity to retrieve (0–1) |
-| `TOP_K_RETRIEVAL` | `5` | Max memories retrieved per request |
-| `VECTOR_STORE_PROVIDER` | `chroma` | `chroma` or `in_memory` |
-| `DATABASE_URL` | SQLite | SQLAlchemy async connection string |
-| `LOG_LEVEL` | `INFO` | `DEBUG` / `INFO` / `WARNING` |
-
----
-
-## Memory Lifecycle
-
-```
-Conversation Turn
-      ↓
-  Extraction (LLM-powered)
-      ↓
-  Importance Scoring (threshold filter)
-      ↓
-  Embedding Generation
-      ↓
-  Duplicate Detection (cosine ≥ 0.90 → merge)
-      ↓
-  Persistence (SQLite + ChromaDB)
-      ↓
-  Semantic Retrieval (next request)
-      ↓
-  Prompt Enrichment
-      ↓
-  LLM Inference
-```
-
----
-
-## Memory Categories
-
-`Skills` · `Preferences` · `Goals` · `Projects` · `Interests` · `Career` · `PersonalFacts` · `Relationships` · `Habits` · `Learning` · `Technologies` · `ImportantEvents`
-
----
-
-## Running Tests
-
-```bash
-pytest tests/ -v
-```
-
----
-
-## Docker
-
-```bash
-docker-compose up --build
-```
-
----
-
-## Adding New Providers
-
-All providers implement a simple abstract interface:
-
-- **LLM**: Implement `LLMAdapter` in `app/adapters/llm.py`, register in `get_llm_adapter()`
-- **Embeddings**: Implement `EmbeddingAdapter` in `app/adapters/embedding.py`
-- **Vector Store**: Implement `VectorStoreAdapter` in `app/adapters/vector.py`
-
-No other files need to change.
-
----
-
-## MVP Scope
-
-**Included:** REST API · Memory extraction · Importance scoring · Embedding generation · SQLite persistence · ChromaDB vector search · Prompt enrichment · Deduplication · Configurable providers · Structured logging
-
-**Deferred:** Memory compression · Decay · Reflection · Summarization · Knowledge graphs · Multi-tenancy · Streaming · Caching
-
----
-
-## License
-
-MIT
+**Bullet Memory** — Stop prompting from scratch. Start building agents with a past.

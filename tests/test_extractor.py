@@ -16,12 +16,12 @@ class TestExtractorParser:
     def test_valid_json(self) -> None:
         raw = """
         [
-          {"category": "Skills", "content": "Python developer", "importance": 0.9, "confidence": 0.95}
+          {"category": "Technologies", "content": "Python developer", "importance": 0.9, "confidence": 0.95}
         ]
         """
         result = MemoryExtractor._parse(raw)
         assert len(result) == 1
-        assert result[0].category == MemoryCategory.SKILLS
+        assert result[0].category == MemoryCategory.TECHNOLOGIES
         assert result[0].content == "Python developer"
 
     def test_markdown_fence_stripped(self) -> None:
