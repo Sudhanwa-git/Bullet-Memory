@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BULLET MEMORY /// ENGINE</title>
+    <!-- Use a retro/hacker font -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="logo">
+                <span class="pulse"></span>
+                <h1>BULLET MEMORY <span class="dim">/// ENGINE v1.0</span></h1>
+            </div>
+            <div class="metrics-hud">
+                <div class="metric">
+                    <span class="label">VAULT STATUS</span>
+                    <span class="value success">ONLINE</span>
+                </div>
+                <div class="metric">
+                    <span class="label">API LATENCY</span>
+                    <span class="value accent" id="latency-metric">-- ms</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="workspace">
+            <!-- 1. AGENT TERMINAL -->
+            <section class="panel agent-terminal">
+                <div class="panel-header">
+                    <h2>01. AGENT INTERFACE</h2>
+                    <div class="panel-tabs">
+                        <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">CHAT</button>
+                        <button class="tab-btn" id="tab-ingest" onclick="switchTab('ingest')">INGEST</button>
+                    </div>
+                </div>
+                
+                <div id="view-chat" class="tab-view">
+                    <div class="chat-history" id="chat-history">
+                        <div class="message system">
+                            <div class="message-content">[SYSTEM] Bullet Memory Engine v1.0 initialized. Awaiting API telemetry...</div>
+                        </div>
+                    </div>
+                    <form id="chat-form" class="input-form">
+                        <input type="text" id="message-input" placeholder="Transmit data to agent..." autocomplete="off" required>
+                        <button type="submit" id="send-button">TX</button>
+                    </form>
+                </div>
+
+                <div id="view-ingest" class="tab-view hidden">
+                    <form id="ingest-form" class="ingest-panel">
+                        <div class="ingest-field ingest-text-field">
+                            <label>RAW TEXT</label>
+                            <textarea id="ingest-text" placeholder="Paste arbitrary data, logs, or agent thoughts here to force semantic extraction..."></textarea>
+                        </div>
+                        <div class="ingest-field">
+                            <label>SOURCE TYPE</label>
+                            <select id="ingest-source">
+                                <option value="api_ingest">api_ingest</option>
+                                <option value="agent_event">agent_event</option>
+                                <option value="observation">observation</option>
+                                <option value="manual">manual</option>
+                            </select>
+                        </div>
+                        <div class="ingest-field">
+                            <label>TAGS (CSV)</label>
+                            <input type="text" id="ingest-tags" placeholder="e.g. system, config, user_pref">
+                        </div>
+                        <div class="ingest-actions">
+                            <button type="submit" class="ingest-submit">EXECUTE INGESTION</button>
+                            <button type="button" class="ingest-direct" onclick="document.getElementById('view-ingest').reset()">CLEAR</button>
+                        </div>
+                        <div id="ingest-result" class="ingest-result hidden"></div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 2. MEMORY VAULT -->
+            <section class="panel memory-vault">
+                <div class="panel-header">
+                    <h2>02. MEMORY VAULT</h2>
+                    <div class="vault-actions">
+                        <button class="icon-btn" onclick="fetchVault()">[ SYNC ]</button>
+                    </div>
+                </div>
+                <div class="memory-grid" id="memory-grid">
+                    <div class="empty-state">No memories loaded. Click SYNC.</div>
+                </div>
+            </section>
+        </div>
+    </div>
+    
+    <script src="/static/script.js"></script>
+</body>
+</html>
