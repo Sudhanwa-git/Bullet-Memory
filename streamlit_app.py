@@ -68,7 +68,7 @@ html, body, [class*="css"], .stApp {
 
 /* Main container */
 .main .block-container {
-    padding: 3rem 4rem !important;
+    padding: 1rem 4rem !important;
     max-width: 1600px !important;
 }
 
@@ -194,7 +194,7 @@ with col_demo:
     st.markdown("<div style='font-size:14px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px;'>Live Chatbot Demo</div>", unsafe_allow_html=True)
     st.markdown("<div style='font-size:11px; color:#666; margin-bottom:1.5rem;'>The agent interacts with the OS via FastAPI.</div>", unsafe_allow_html=True)
 
-    chat_container = st.container(height=550, border=False)
+    chat_container = st.container(height=460, border=False)
     
     with chat_container:
         for msg in st.session_state.messages:
