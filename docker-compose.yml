@@ -1,23 +1,76 @@
 version: "3.9"
 
-services:
-  bullet-memory:
-    build: .
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    volumes:
-      - ./data:/app/data
-      - ./chroma_db:/app/chroma_db
-    restart: unless-stopped
+networks:
+  bullet-net:
+    driver: bridge
 
+volumes:
+  chroma_data:
+  app_data:
+
+services:
+
+  # ── Vector Store ────────────────────────────────────────────────────────────
   chromadb:
     image: chromadb/chroma:latest
     ports:
       - "8001:8000"
     volumes:
-      - ./chroma_data:/chroma/chroma
+      - chroma_data:/chroma/chroma
     environment:
       - IS_PERSISTENT=TRUE
+    networks:
+      - bullet-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ─────────────────────────────────────────────────────────
+  bullet-memory:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Override chroma to talk to the container, not localhost
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - VECTOR_STORE_PROVIDER=chroma
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/bullet_memory.db
+      - CHROMA_PERSIST_DIR=/app/chroma_db
+    volumes:
+      - app_data:/app/data
+      - ./chroma_db:/app/chroma_db
+    networks:
+      - bullet-net
+    depends_on:
+      chromadb:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Streamlit Frontend ──────────────────────────────────────────────────────
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://bullet-memory:8000
+    networks:
+      - bullet-net
+    depends_on:
+      bullet-memory:
+        condition: service_healthy
     restart: unless-stopped

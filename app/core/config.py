@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # ── Vector Store ──────────────────────────────────────────────────────────
     VECTOR_STORE_PROVIDER: str = Field(default="chroma", description="chroma | in_memory")
     CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
+    # When set, connects to a remote ChromaDB HTTP server (e.g. in Docker)
+    CHROMA_HOST: str = Field(default="")
+    CHROMA_PORT: int = Field(default=8000)
 
     # ── Memory tuning ─────────────────────────────────────────────────────────
     IMPORTANCE_THRESHOLD: float = Field(default=0.4, ge=0.0, le=1.0)

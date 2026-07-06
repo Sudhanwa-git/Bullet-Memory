@@ -44,7 +44,17 @@ if errorlevel 1 (
 )
 
 echo.
-echo   ✓ SUCCESSFUL
+echo   ✓ SHIPPED
 echo   Committed: "%~1"
+echo   ──────────────────────────────────────────────────
+echo.
+echo   Streamlit Cloud setup:
+echo     Main file  →  streamlit_app.py
+echo     Secret     →  API_BASE_URL = "http://your-backend"
+echo.
+echo   Local stack:
+echo     docker-compose up --build
+echo     UI   →  http://localhost:8501
+echo     API  →  http://localhost:8000/docs
 echo   ──────────────────────────────────────────────────
 echo.

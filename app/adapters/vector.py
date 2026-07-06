@@ -57,7 +57,17 @@ class ChromaVectorStore(VectorStoreAdapter):
     def __init__(self) -> None:
         import chromadb
 
-        self._client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
+        chroma_host = getattr(settings, "CHROMA_HOST", "") or ""
+        if chroma_host:
+            # Docker / networked mode — connect to the ChromaDB container over HTTP
+            chroma_port = int(getattr(settings, "CHROMA_PORT", 8000) or 8000)
+            self._client = chromadb.HttpClient(host=chroma_host, port=chroma_port)
+            logger.info("chroma.http_client", host=chroma_host, port=chroma_port)
+        else:
+            # Local dev mode — use a persistent on-disk client
+            self._client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
+            logger.info("chroma.persistent_client", path=settings.CHROMA_PERSIST_DIR)
+
         self._collection = self._client.get_or_create_collection(
             name=self._COLLECTION_NAME,
             metadata={"hnsw:space": "cosine"},
