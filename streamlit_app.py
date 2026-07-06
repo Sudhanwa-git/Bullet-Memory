@@ -165,135 +165,453 @@ def _api_post(path: str, payload: dict) -> dict | None:
 # ── Page setup ────────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="Bullet Memory — Semantic Memory Engine",
-    page_icon="🧠",
+    page_title="BULLET MEMORY /// ENGINE",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS
+# ── Terminal CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap');
 
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    /* ── Global reset ── */
+    html, body, [class*="css"], .stApp {
+        font-family: 'JetBrains Mono', monospace !important;
+        background-color: #000000 !important;
+        color: #e2e8f0 !important;
+    }
 
-    .stApp { background: #0a0a0f; }
+    /* ── Kill Streamlit chrome ── */
+    header[data-testid="stHeader"]         { display: none !important; }
+    .stDeployButton                        { display: none !important; }
+    footer                                 { display: none !important; }
+    #MainMenu                              { display: none !important; }
+    [data-testid="stToolbar"]              { display: none !important; }
 
-    /* Hide default Streamlit header */
-    header[data-testid="stHeader"] { display: none; }
-
-    /* Sidebar */
+    /* ── Sidebar ── */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
-        border-right: 1px solid rgba(99,102,241,0.2);
+        background: #050505 !important;
+        border-right: 1px solid #00f0ff !important;
+    }
+    [data-testid="stSidebar"] * {
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+    [data-testid="stSidebarContent"] {
+        padding-top: 1rem;
     }
 
-    /* Cards */
-    .mem-card {
-        background: linear-gradient(135deg, #13131f 0%, #0f0f1a 100%);
-        border: 1px solid rgba(99,102,241,0.25);
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 12px;
-        transition: border-color 0.2s ease;
+    /* ── Main container ── */
+    .main .block-container {
+        background: #000000 !important;
+        padding-top: 1.5rem !important;
+        max-width: 1400px;
     }
-    .mem-card:hover { border-color: rgba(99,102,241,0.6); }
 
-    .mem-category {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
-        font-weight: 500;
+    /* ── Sidebar logo ── */
+    .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 0 16px 0;
+        border-bottom: 1px solid rgba(0,240,255,0.3);
+        margin-bottom: 20px;
+    }
+    .pulse-dot {
+        width: 10px; height: 10px;
+        background: #00f0ff;
+        box-shadow: 0 0 12px rgba(0,240,255,0.8);
+        animation: pulsate 2s ease-in-out infinite;
+        flex-shrink: 0;
+    }
+    .logo-text {
+        font-size: 13px;
+        font-weight: 800;
+        color: #00f0ff;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        padding: 3px 8px;
-        border-radius: 4px;
-        display: inline-block;
-        margin-bottom: 8px;
+        line-height: 1.2;
+    }
+    .logo-sub {
+        font-size: 10px;
+        color: #64748b;
+        letter-spacing: 0.08em;
+        font-weight: 400;
     }
 
-    .cat-PREFERENCE  { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
-    .cat-SKILL       { background: rgba(34,197,94,0.1);   color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
-    .cat-GOAL        { background: rgba(251,191,36,0.1);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
-    .cat-FACT        { background: rgba(56,189,248,0.1);  color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); }
-    .cat-TOOL_RESULT { background: rgba(168,85,247,0.1);  color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
-    .cat-INSTRUCTION { background: rgba(251,113,133,0.1); color: #fb7185; border: 1px solid rgba(251,113,133,0.25); }
-    .cat-default     { background: rgba(100,116,139,0.1); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
+    /* ── Nav label ── */
+    .nav-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        color: #00f0ff;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(0,240,255,0.15);
+    }
 
-    .mem-content { color: #e2e8f0; font-size: 14px; line-height: 1.6; margin: 6px 0; }
-    .mem-meta    { color: #64748b; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
-
-    .badge {
-        display: inline-block;
-        background: rgba(99,102,241,0.1);
-        color: #6366f1;
-        border: 1px solid rgba(99,102,241,0.2);
-        border-radius: 20px;
-        padding: 2px 10px;
+    /* ── Status badges ── */
+    .status-live {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(57,255,20,0.06);
+        border: 1px solid rgba(57,255,20,0.4);
+        padding: 8px 12px;
         font-size: 11px;
-        margin-right: 4px;
+        font-weight: 600;
+        color: #39ff14;
+        letter-spacing: 0.08em;
+        margin: 8px 0;
+    }
+    .status-demo {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(255,234,0,0.06);
+        border: 1px solid rgba(255,234,0,0.4);
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #ffea00;
+        letter-spacing: 0.08em;
+        margin: 8px 0;
+    }
+    .status-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .dot-live { background: #39ff14; box-shadow: 0 0 8px rgba(57,255,20,0.8); }
+    .dot-demo { background: #ffea00; box-shadow: 0 0 8px rgba(255,234,0,0.8); }
+
+    /* ── Page header ── */
+    .page-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        border: 1px solid #00f0ff;
+        padding: 16px 24px;
+        margin-bottom: 24px;
+        background: #050505;
+        position: relative;
+    }
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -1px; left: 40px; right: 40px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+        box-shadow: 0 0 12px rgba(0,240,255,0.5);
+    }
+    .page-num {
+        font-size: 10px;
+        font-weight: 700;
+        color: #00f0ff;
+        letter-spacing: 0.2em;
+        padding-top: 2px;
+        opacity: 0.6;
+    }
+    .page-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #00f0ff;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        text-shadow: 0 0 20px rgba(0,240,255,0.4);
+        line-height: 1.2;
+    }
+    .page-sub {
+        font-size: 11px;
+        color: #64748b;
+        letter-spacing: 0.08em;
+        margin-top: 2px;
+        font-weight: 400;
+    }
+
+    /* ── Memory cards ── */
+    .mem-card {
+        background: #050505;
+        border: 1px solid #1e293b;
+        border-left: 3px solid #00f0ff;
+        padding: 14px 18px;
+        margin-bottom: 10px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        position: relative;
+    }
+    .mem-card:hover {
+        border-color: #00f0ff;
+        box-shadow: 0 0 16px rgba(0,240,255,0.08), inset 0 0 20px rgba(0,240,255,0.02);
+    }
+
+    /* Category pills */
+    .mem-category {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        display: inline-block;
+        margin-bottom: 8px;
+        border: 1px solid;
+    }
+    .cat-PREFERENCE  { color: #00f0ff; border-color: rgba(0,240,255,0.4); background: rgba(0,240,255,0.06); }
+    .cat-SKILL       { color: #39ff14; border-color: rgba(57,255,20,0.4); background: rgba(57,255,20,0.05); }
+    .cat-GOAL        { color: #ffea00; border-color: rgba(255,234,0,0.4); background: rgba(255,234,0,0.05); }
+    .cat-FACT        { color: #a78bfa; border-color: rgba(167,139,250,0.4); background: rgba(167,139,250,0.05); }
+    .cat-TOOL_RESULT { color: #fb923c; border-color: rgba(251,146,60,0.4); background: rgba(251,146,60,0.05); }
+    .cat-INSTRUCTION { color: #f472b6; border-color: rgba(244,114,182,0.4); background: rgba(244,114,182,0.05); }
+    .cat-default     { color: #64748b; border-color: rgba(100,116,139,0.4); background: rgba(100,116,139,0.05); }
+
+    .mem-content {
+        color: #cbd5e1;
+        font-size: 13px;
+        line-height: 1.65;
+        margin: 6px 0 10px 0;
+        font-weight: 400;
+    }
+    .mem-meta {
+        color: #475569;
+        font-size: 11px;
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .mem-meta b { color: #00f0ff; }
+
+    /* Importance bar */
+    .imp-bar {
+        font-size: 10px;
+        letter-spacing: -1px;
+        color: #00f0ff;
+    }
+
+    /* Tags */
+    .tag {
+        display: inline-block;
+        background: transparent;
+        color: #00f0ff;
+        border: 1px solid rgba(0,240,255,0.3);
+        padding: 1px 7px;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        margin: 2px 3px 2px 0;
         font-family: 'JetBrains Mono', monospace;
     }
 
+    /* ── Stat cards ── */
     .stat-card {
-        background: linear-gradient(135deg, #13131f, #0f0f1a);
-        border: 1px solid rgba(99,102,241,0.2);
-        border-radius: 12px;
-        padding: 20px;
+        background: #050505;
+        border: 1px solid rgba(0,240,255,0.25);
+        padding: 20px 16px;
         text-align: center;
+        position: relative;
+        overflow: hidden;
     }
-    .stat-num  { font-size: 32px; font-weight: 700; color: #818cf8; }
-    .stat-lbl  { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+        opacity: 0.4;
+    }
+    .stat-num {
+        font-size: 36px;
+        font-weight: 800;
+        color: #00f0ff;
+        text-shadow: 0 0 20px rgba(0,240,255,0.5);
+        line-height: 1;
+    }
+    .stat-lbl {
+        font-size: 10px;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-top: 8px;
+        font-weight: 600;
+    }
 
+    /* ── Banners ── */
     .demo-banner {
-        background: linear-gradient(90deg, rgba(251,191,36,0.08), rgba(251,191,36,0.02));
-        border: 1px solid rgba(251,191,36,0.3);
-        border-radius: 8px;
-        padding: 10px 16px;
-        color: #fbbf24;
-        font-size: 13px;
+        background: rgba(255,234,0,0.05);
+        border: 1px solid rgba(255,234,0,0.35);
+        padding: 10px 14px;
+        color: #ffea00;
+        font-size: 11px;
+        letter-spacing: 0.06em;
         margin-bottom: 16px;
     }
     .live-banner {
-        background: linear-gradient(90deg, rgba(34,197,94,0.08), rgba(34,197,94,0.02));
-        border: 1px solid rgba(34,197,94,0.3);
-        border-radius: 8px;
-        padding: 10px 16px;
-        color: #4ade80;
-        font-size: 13px;
-        margin-bottom: 16px;
-    }
-
-    /* Override Streamlit button */
-    .stButton > button {
-        background: linear-gradient(135deg, #6366f1, #4f46e5);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: opacity 0.2s;
-    }
-    .stButton > button:hover { opacity: 0.88; border: none; }
-
-    /* Chat */
-    [data-testid="stChatMessage"] {
-        background: rgba(15,15,26,0.8);
-        border-radius: 12px;
-        border: 1px solid rgba(99,102,241,0.15);
-        padding: 4px 8px;
-    }
-
-    /* Section titles */
-    .section-title {
-        font-family: 'JetBrains Mono', monospace;
+        background: rgba(57,255,20,0.05);
+        border: 1px solid rgba(57,255,20,0.35);
+        padding: 10px 14px;
+        color: #39ff14;
         font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        color: #6366f1;
+        letter-spacing: 0.06em;
         margin-bottom: 16px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid rgba(99,102,241,0.15);
+    }
+
+    /* ── Streamlit widget overrides ── */
+    .stButton > button {
+        background: transparent !important;
+        border: 1px solid #00f0ff !important;
+        color: #00f0ff !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        letter-spacing: 0.1em !important;
+        border-radius: 0 !important;
+        padding: 8px 20px !important;
+        text-transform: uppercase !important;
+        transition: all 0.15s !important;
+    }
+    .stButton > button:hover {
+        background: #00f0ff !important;
+        color: #000000 !important;
+        box-shadow: 0 0 16px rgba(0,240,255,0.4) !important;
+    }
+
+    /* Form submit button */
+    .stFormSubmitButton > button {
+        background: rgba(0,240,255,0.08) !important;
+        border: 1px solid #00f0ff !important;
+        color: #00f0ff !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        letter-spacing: 0.1em !important;
+        border-radius: 0 !important;
+        text-transform: uppercase !important;
+        width: 100% !important;
+    }
+    .stFormSubmitButton > button:hover {
+        background: #00f0ff !important;
+        color: #000000 !important;
+        box-shadow: 0 0 20px rgba(0,240,255,0.4) !important;
+    }
+
+    /* Text inputs, text areas, selects */
+    .stTextInput input, .stTextArea textarea, .stSelectbox select,
+    div[data-baseweb="input"] input, div[data-baseweb="textarea"] textarea {
+        background: #050505 !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 0 !important;
+        color: #e2e8f0 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 13px !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #00f0ff !important;
+        box-shadow: 0 0 8px rgba(0,240,255,0.15) !important;
+    }
+
+    /* Selectbox */
+    div[data-baseweb="select"] > div {
+        background: #050505 !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 0 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        color: #e2e8f0 !important;
+    }
+    div[data-baseweb="select"] > div:focus-within {
+        border-color: #00f0ff !important;
+    }
+
+    /* Slider */
+    .stSlider [data-baseweb="slider"] div[role="slider"] {
+        background: #00f0ff !important;
+        box-shadow: 0 0 8px rgba(0,240,255,0.5) !important;
+    }
+    .stSlider div[data-testid="stTickBarMin"],
+    .stSlider div[data-testid="stTickBarMax"] {
+        color: #475569 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 11px !important;
+    }
+
+    /* Radio buttons */
+    .stRadio label {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 12px !important;
+        color: #94a3b8 !important;
+        letter-spacing: 0.05em !important;
+    }
+    .stRadio [data-baseweb="radio"] span:first-child {
+        border-color: #1e293b !important;
+    }
+    .stRadio [aria-checked="true"] span:first-child {
+        border-color: #00f0ff !important;
+        background: #00f0ff !important;
+    }
+
+    /* Chat messages */
+    [data-testid="stChatMessage"] {
+        background: #050505 !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 0 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+    [data-testid="stChatMessage"][data-testid*="user"] {
+        border-left: 3px solid #00f0ff !important;
+    }
+
+    /* Chat input */
+    [data-testid="stChatInput"] textarea {
+        background: #050505 !important;
+        border: 1px solid rgba(0,240,255,0.3) !important;
+        border-radius: 0 !important;
+        color: #e2e8f0 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 13px !important;
+    }
+    [data-testid="stChatInput"] textarea:focus {
+        border-color: #00f0ff !important;
+        box-shadow: 0 0 12px rgba(0,240,255,0.15) !important;
+    }
+    [data-testid="stChatInput"] button {
+        color: #00f0ff !important;
+    }
+
+    /* Bar chart */
+    .stVegaLiteChart canvas { background: #000000 !important; }
+
+    /* Captions and labels */
+    .stCaption, [data-testid="stCaptionContainer"] {
+        font-family: 'JetBrains Mono', monospace !important;
+        color: #475569 !important;
+        font-size: 11px !important;
+    }
+
+    /* Code blocks */
+    code, pre {
+        background: #050505 !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 0 !important;
+        color: #00f0ff !important;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    /* Divider */
+    hr { border-color: #1e293b !important; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #000000; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; }
+    ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+
+    /* Spinner */
+    .stSpinner > div { border-top-color: #00f0ff !important; }
+
+    /* Success / warning / error */
+    .stSuccess { background: rgba(57,255,20,0.06) !important; border: 1px solid rgba(57,255,20,0.3) !important; border-radius: 0 !important; }
+    .stWarning { background: rgba(255,234,0,0.06) !important; border: 1px solid rgba(255,234,0,0.3) !important; border-radius: 0 !important; }
+    .stError   { background: rgba(255,51,51,0.06) !important; border: 1px solid rgba(255,51,51,0.3) !important; border-radius: 0 !important; }
+    .stInfo    { background: rgba(0,240,255,0.06) !important; border: 1px solid rgba(0,240,255,0.3) !important; border-radius: 0 !important; }
+
+    @keyframes pulsate {
+        0%, 100% { opacity: 1; box-shadow: 0 0 12px rgba(0,240,255,0.8); }
+        50%       { opacity: 0.4; box-shadow: 0 0 4px rgba(0,240,255,0.3); }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -306,9 +624,9 @@ if "messages" not in st.session_state:
         {
             "role": "assistant",
             "content": (
-                "🧠 **Bullet Memory Engine** online.\n\n"
-                "I have access to your persistent memory vault. Ask me anything about your "
-                "stored knowledge, preferences, or goals — or just chat and I'll extract new memories automatically."
+                "[SYSTEM] Bullet Memory Engine v1.0 initialized.\n\n"
+                "Persistent memory vault online. Ask me anything about your stored knowledge, "
+                "preferences, or goals — or just chat and I'll extract new memories automatically."
             ),
         }
     ]
@@ -320,50 +638,59 @@ if "backend_ok" not in st.session_state:
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
-    st.markdown("## 🧠 Bullet Memory")
-    st.markdown("<div class='section-title'>Navigation</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class='sidebar-logo'>
+        <div class='pulse-dot'></div>
+        <div>
+            <div class='logo-text'>BULLET MEMORY</div>
+            <div class='logo-sub'>/// ENGINE v1.0</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='nav-label'>Navigation</div>", unsafe_allow_html=True)
 
     page = st.radio(
         "Go to",
-        ["💬 Agent Terminal", "📥 Ingest", "🗄️ Memory Vault", "📊 Stats"],
+        ["01 // AGENT TERMINAL", "02 // INGEST", "03 // MEMORY VAULT", "04 // STATS"],
         label_visibility="collapsed",
     )
 
     st.markdown("---")
-    st.markdown("<div class='section-title'>Status</div>", unsafe_allow_html=True)
+    st.markdown("<div class='nav-label'>System Status</div>", unsafe_allow_html=True)
 
     if st.session_state.backend_ok:
         st.markdown(
-            "<div class='live-banner'>🟢 &nbsp;Backend connected</div>",
+            "<div class='status-live'><div class='status-dot dot-live'></div>BACKEND CONNECTED</div>",
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            "<div class='demo-banner'>🟡 &nbsp;Demo mode — no backend</div>",
+            "<div class='status-demo'><div class='status-dot dot-demo'></div>DEMO MODE</div>",
             unsafe_allow_html=True,
         )
 
-    st.caption(f"**API:** `{API_BASE_URL}`")
+    st.caption(f"API → `{API_BASE_URL}`")
 
-    if st.button("↻ Check Backend"):
+    if st.button("[ PING BACKEND ]"):
         with st.spinner("Pinging..."):
             st.session_state.backend_ok = _check_backend()
         st.rerun()
 
     st.markdown("---")
-    st.markdown("<div class='section-title'>About</div>", unsafe_allow_html=True)
+    st.markdown("<div class='nav-label'>About</div>", unsafe_allow_html=True)
+    st.markdown("""
+<span style='color:#64748b;font-size:11px;line-height:1.8;'>
+Semantic memory engine for LLM agents.<br><br>
+⚡ FastAPI async backend<br>
+🔍 ChromaDB vector store<br>
+🤖 LLM-powered extraction<br>
+📦 Fine-tune export (JSONL)
+</span>
+""", unsafe_allow_html=True)
     st.markdown(
-        """
-        **Bullet Memory** is a semantic memory engine for LLM agents.
-
-        - ⚡ FastAPI async backend
-        - 🔍 ChromaDB vector store
-        - 🤖 LLM-powered extraction
-        - 📦 Fine-tune export (JSONL)
-
-        [GitHub →](https://github.com/Sudhanwa-git/Bullet-Memory)
-        """,
-        unsafe_allow_html=False,
+        "<a href='https://github.com/Sudhanwa-git/Bullet-Memory' style='color:#00f0ff;font-size:11px;'>[ GITHUB → ]</a>",
+        unsafe_allow_html=True,
     )
 
 
@@ -371,22 +698,24 @@ with st.sidebar:
 
 def render_memory_card(mem: dict) -> None:
     cat = mem.get("category", "FACT")
-    cat_class = f"cat-{cat}" if cat in ("PREFERENCE", "SKILL", "GOAL", "FACT", "TOOL_RESULT", "INSTRUCTION") else "cat-default"
-    tags_html = "".join(f"<span class='badge'>{t}</span>" for t in (mem.get("tags") or []))
+    known = ("PREFERENCE", "SKILL", "GOAL", "FACT", "TOOL_RESULT", "INSTRUCTION")
+    cat_class = f"cat-{cat}" if cat in known else "cat-default"
+    tags_html = "".join(f"<span class='tag'>{t}</span>" for t in (mem.get("tags") or []))
     importance = mem.get("importance", 0)
-    imp_bar = "█" * int(importance * 10) + "░" * (10 - int(importance * 10))
+    filled = int(importance * 10)
+    imp_bar = "█" * filled + "░" * (10 - filled)
 
     st.markdown(
         f"""
         <div class='mem-card'>
             <span class='mem-category {cat_class}'>{cat}</span>
             <div class='mem-content'>{mem.get("content", "")}</div>
-            <div style='margin-top:8px'>{tags_html}</div>
-            <div class='mem-meta' style='margin-top:10px;display:flex;gap:20px;flex-wrap:wrap;'>
-                <span>⚡ <b style='color:#818cf8'>{importance:.2f}</b> importance &nbsp;{imp_bar}</span>
-                <span>🎯 {mem.get('confidence', 0):.2f} conf</span>
-                <span>👁 {mem.get('access_count', 0)} accesses</span>
-                <span>📂 {mem.get('source_type', '—')}</span>
+            <div style='margin-bottom:10px;'>{tags_html}</div>
+            <div class='mem-meta'>
+                <span>IMP <b>{importance:.2f}</b> <span class='imp-bar'>{imp_bar}</span></span>
+                <span>CONF <b>{mem.get('confidence', 0):.2f}</b></span>
+                <span>HITS <b>{mem.get('access_count', 0)}</b></span>
+                <span>SRC <b>{mem.get('source_type', '—')}</b></span>
             </div>
         </div>
         """,
@@ -398,29 +727,39 @@ def render_memory_card(mem: dict) -> None:
 # PAGE: Agent Terminal
 # ═══════════════════════════════════════════════════════════════════════════════
 
-if page == "💬 Agent Terminal":
-    st.markdown("## 💬 Agent Terminal")
-    st.markdown("<div class='section-title'>Chat with memory-augmented agent</div>", unsafe_allow_html=True)
+if page == "01 // AGENT TERMINAL":
+    st.markdown("""
+    <div class='page-header'>
+        <div class='page-num'>01</div>
+        <div>
+            <div class='page-title'>AGENT TERMINAL</div>
+            <div class='page-sub'>Chat with memory-augmented agent</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     if not st.session_state.backend_ok:
         st.markdown(
-            "<div class='demo-banner'>🟡 Demo mode — responses are pre-scripted. Connect a backend for real LLM responses.</div>",
+            "<div class='demo-banner'>[ DEMO MODE ] — Responses are pre-scripted. Connect a backend for real LLM responses.</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div class='live-banner'>[ LIVE ] — Memory-augmented responses active.</div>",
             unsafe_allow_html=True,
         )
 
-    # Render history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Input
-    if prompt := st.chat_input("Ask anything…"):
+    if prompt := st.chat_input("Transmit data to agent..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("Thinking…"):
+            with st.spinner("Processing..."):
                 if st.session_state.backend_ok:
                     t0 = time.time()
                     data = _api_post("/chat", {"user_id": DEMO_USER_ID, "message": prompt})
@@ -431,15 +770,14 @@ if page == "💬 Agent Terminal":
                         memories_used = data.get("memories_retrieved", 0)
                         st.markdown(answer)
                         if memories_used:
-                            st.caption(f"🧠 Retrieved {memories_used} memories · ⚡ {latency:.0f}ms")
+                            st.caption(f"[ {memories_used} memories retrieved · {latency:.0f}ms ]")
                         st.session_state.messages.append({"role": "assistant", "content": answer})
                     else:
-                        err = "⚠️ Backend unreachable. Switching to demo mode."
+                        err = "[ ERROR ] Backend unreachable. Switching to demo mode."
                         st.markdown(err)
                         st.session_state.messages.append({"role": "assistant", "content": err})
                         st.session_state.backend_ok = False
                 else:
-                    # Demo responses
                     pl = prompt.lower()
                     if any(w in pl for w in ("what", "explain", "how", "bullet")):
                         answer = DEMO_CHAT_RESPONSES["what"]
@@ -447,13 +785,12 @@ if page == "💬 Agent Terminal":
                         answer = DEMO_CHAT_RESPONSES["skill"]
                     else:
                         answer = DEMO_CHAT_RESPONSES["default"]
-                    time.sleep(0.6)  # simulate latency
+                    time.sleep(0.6)
                     st.markdown(answer)
                     st.session_state.messages.append({"role": "assistant", "content": answer})
 
-    # Clear chat
     if len(st.session_state.messages) > 1:
-        if st.button("🗑 Clear conversation"):
+        if st.button("[ CLEAR CONVERSATION ]"):
             st.session_state.messages = [st.session_state.messages[0]]
             st.rerun()
 
@@ -462,44 +799,50 @@ if page == "💬 Agent Terminal":
 # PAGE: Ingest
 # ═══════════════════════════════════════════════════════════════════════════════
 
-elif page == "📥 Ingest":
-    st.markdown("## 📥 Ingest Panel")
-    st.markdown("<div class='section-title'>Extract and store memories from raw text</div>", unsafe_allow_html=True)
+elif page == "02 // INGEST":
+    st.markdown("""
+    <div class='page-header'>
+        <div class='page-num'>02</div>
+        <div>
+            <div class='page-title'>INGEST PANEL</div>
+            <div class='page-sub'>Extract and store memories from raw text</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     if not st.session_state.backend_ok:
         st.markdown(
-            "<div class='demo-banner'>🟡 Demo mode — ingestion is disabled. Connect a backend to extract real memories.</div>",
+            "<div class='demo-banner'>[ DEMO MODE ] — Ingestion disabled. Connect a backend to extract real memories.</div>",
             unsafe_allow_html=True,
         )
 
     with st.form("ingest_form"):
         raw_text = st.text_area(
-            "Raw text to extract from",
-            height=220,
-            placeholder="Paste any text — conversation logs, documents, notes, tool outputs…",
+            "RAW TEXT",
+            height=200,
+            placeholder="Paste any text — conversation logs, documents, notes, tool outputs...",
         )
 
         col1, col2 = st.columns(2)
         with col1:
             source_type = st.selectbox(
-                "Source type",
+                "SOURCE TYPE",
                 ["api_ingest", "chat", "agent_event", "manual"],
             )
-            tags_input = st.text_input("Tags (comma-separated)", placeholder="python, goals, career")
-
+            tags_input = st.text_input("TAGS (comma-separated)", placeholder="python, goals, career")
         with col2:
-            agent_id = st.text_input("Agent ID (optional)", placeholder="my-agent-v1")
-            session_id = st.text_input("Session ID (optional)", placeholder="session-001")
+            agent_id = st.text_input("AGENT ID (optional)", placeholder="my-agent-v1")
+            session_id = st.text_input("SESSION ID (optional)", placeholder="session-001")
 
-        submitted = st.form_submit_button("🚀 Extract & Store", use_container_width=True)
+        submitted = st.form_submit_button("[ EXECUTE INGESTION ]", use_container_width=True)
 
         if submitted:
             if not raw_text.strip():
-                st.warning("Please enter some text to ingest.")
+                st.warning("No input detected. Provide text to ingest.")
             elif not st.session_state.backend_ok:
-                st.info("🟡 Demo mode: In a live deployment, this would extract and store memories from your text using an LLM.")
+                st.info("[ DEMO ] In a live deployment, this would extract and store memories using an LLM.")
             else:
-                with st.spinner("Extracting memories…"):
+                with st.spinner("Extracting memories..."):
                     tags = [t.strip() for t in tags_input.split(",") if t.strip()] if tags_input else []
                     payload = {
                         "user_id": DEMO_USER_ID,
@@ -512,43 +855,60 @@ elif page == "📥 Ingest":
                     res = _api_post("/ingest/raw", payload)
                     if res:
                         n = res.get("memories_stored", 0)
-                        st.success(f"✅ Extracted and stored **{n}** memories.")
+                        st.success(f"[ OK ] Extracted and stored {n} memories.")
                     else:
-                        st.error("Ingest failed — check backend connection.")
+                        st.error("[ FAIL ] Ingest failed — check backend connection.")
 
     st.markdown("---")
-    st.markdown("### How extraction works")
+    st.markdown("<div class='nav-label' style='margin-top:16px;'>How Extraction Works</div>", unsafe_allow_html=True)
     col_a, col_b, col_c = st.columns(3)
     with col_a:
-        st.markdown("**1. LLM Extraction**\nThe text is passed to an LLM which identifies durable facts, skills, preferences, and goals.")
+        st.markdown("""<div style='border:1px solid #1e293b;padding:14px;background:#050505;'>
+<span style='color:#00f0ff;font-size:10px;font-weight:700;letter-spacing:.15em;'>01 // LLM EXTRACTION</span><br><br>
+<span style='color:#94a3b8;font-size:12px;line-height:1.7;'>Text is passed to an LLM which identifies durable facts, skills, preferences, and goals.</span>
+</div>""", unsafe_allow_html=True)
     with col_b:
-        st.markdown("**2. Importance Scoring**\nEach candidate memory is scored for importance (0–1). Low-importance items are filtered out.")
+        st.markdown("""<div style='border:1px solid #1e293b;padding:14px;background:#050505;'>
+<span style='color:#00f0ff;font-size:10px;font-weight:700;letter-spacing:.15em;'>02 // IMPORTANCE SCORING</span><br><br>
+<span style='color:#94a3b8;font-size:12px;line-height:1.7;'>Each candidate memory is scored 0–1. Low-importance items are filtered out.</span>
+</div>""", unsafe_allow_html=True)
     with col_c:
-        st.markdown("**3. Deduplication**\nNew memories are embedded and compared against the vector store. Near-duplicates are merged, not duplicated.")
+        st.markdown("""<div style='border:1px solid #1e293b;padding:14px;background:#050505;'>
+<span style='color:#00f0ff;font-size:10px;font-weight:700;letter-spacing:.15em;'>03 // DEDUPLICATION</span><br><br>
+<span style='color:#94a3b8;font-size:12px;line-height:1.7;'>New memories are embedded and compared against the vector store. Near-duplicates are merged.</span>
+</div>""", unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PAGE: Memory Vault
 # ═══════════════════════════════════════════════════════════════════════════════
 
-elif page == "🗄️ Memory Vault":
-    st.markdown("## 🗄️ Memory Vault")
-    st.markdown("<div class='section-title'>Browse all stored memories</div>", unsafe_allow_html=True)
+elif page == "03 // MEMORY VAULT":
+    st.markdown("""
+    <div class='page-header'>
+        <div class='page-num'>03</div>
+        <div>
+            <div class='page-title'>MEMORY VAULT</div>
+            <div class='page-sub'>Browse all persisted memories</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Filters
     col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
-        cat_filter = st.selectbox("Category", ["All", "PREFERENCE", "SKILL", "GOAL", "FACT", "TOOL_RESULT", "INSTRUCTION"])
+        cat_filter = st.selectbox("CATEGORY", ["All", "PREFERENCE", "SKILL", "GOAL", "FACT", "TOOL_RESULT", "INSTRUCTION"])
     with col2:
-        src_filter = st.selectbox("Source type", ["All", "chat", "agent_event", "manual", "api_ingest"])
+        src_filter = st.selectbox("SOURCE TYPE", ["All", "chat", "agent_event", "manual", "api_ingest"])
     with col3:
-        min_imp = st.slider("Min importance", 0.0, 1.0, 0.0, 0.05)
+        min_imp = st.slider("MIN IMP", 0.0, 1.0, 0.0, 0.05)
 
-    refresh = st.button("↻ Refresh Vault")
+    c1, c2 = st.columns([1, 5])
+    with c1:
+        if st.button("[ SYNC ]"):
+            st.rerun()
 
     st.markdown("---")
 
-    # Load memories
     if st.session_state.backend_ok:
         params = {"user_id": DEMO_USER_ID}
         if cat_filter != "All":
@@ -562,26 +922,24 @@ elif page == "🗄️ Memory Vault":
         if data:
             memories = data.get("memories", [])
         else:
-            st.warning("Could not load memories from backend.")
+            st.warning("[ WARN ] Could not load memories from backend.")
             memories = []
     else:
-        # Demo data with client-side filtering
         memories = DEMO_MEMORIES
         if cat_filter != "All":
             memories = [m for m in memories if m["category"] == cat_filter]
         if src_filter != "All":
             memories = [m for m in memories if m["source_type"] == src_filter]
         memories = [m for m in memories if m["importance"] >= min_imp]
-
         st.markdown(
-            "<div class='demo-banner'>🟡 Showing demo memories. Connect a backend to see real persisted data.</div>",
+            "<div class='demo-banner'>[ DEMO ] Showing demo memories. Connect a backend to see real persisted data.</div>",
             unsafe_allow_html=True,
         )
 
     if not memories:
-        st.info("No memories found matching the current filters.")
+        st.markdown("<div style='color:#475569;font-size:12px;padding:20px 0;'>// No memories match current filters.</div>", unsafe_allow_html=True)
     else:
-        st.caption(f"Showing **{len(memories)}** memor{'y' if len(memories)==1 else 'ies'}")
+        st.caption(f"// {len(memories)} memor{'y' if len(memories)==1 else 'ies'} loaded")
         for mem in sorted(memories, key=lambda m: m.get("importance", 0), reverse=True):
             render_memory_card(mem)
 
@@ -590,16 +948,22 @@ elif page == "🗄️ Memory Vault":
 # PAGE: Stats
 # ═══════════════════════════════════════════════════════════════════════════════
 
-elif page == "📊 Stats":
-    st.markdown("## 📊 System Stats")
-    st.markdown("<div class='section-title'>Memory engine overview</div>", unsafe_allow_html=True)
+elif page == "04 // STATS":
+    st.markdown("""
+    <div class='page-header'>
+        <div class='page-num'>04</div>
+        <div>
+            <div class='page-title'>SYSTEM STATS</div>
+            <div class='page-sub'>Memory engine overview</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     if not st.session_state.backend_ok:
         st.markdown(
-            "<div class='demo-banner'>🟡 Demo mode — showing example stats.</div>",
+            "<div class='demo-banner'>[ DEMO MODE ] — Showing example stats.</div>",
             unsafe_allow_html=True,
         )
-        # Demo stats
         memories = DEMO_MEMORIES
     else:
         data = _api_get(f"/memories/{DEMO_USER_ID}")
@@ -608,18 +972,17 @@ elif page == "📊 Stats":
     total = len(memories)
     avg_imp = sum(m.get("importance", 0) for m in memories) / total if total else 0
     total_accesses = sum(m.get("access_count", 0) for m in memories)
-    categories = {}
+    categories: dict[str, int] = {}
     for m in memories:
         c = m.get("category", "UNKNOWN")
         categories[c] = categories.get(c, 0) + 1
 
-    # Stat row
     cols = st.columns(4)
     stats = [
-        (str(total), "Total Memories"),
-        (f"{avg_imp:.2f}", "Avg Importance"),
-        (str(total_accesses), "Total Accesses"),
-        (str(len(categories)), "Categories"),
+        (str(total), "TOTAL MEMORIES"),
+        (f"{avg_imp:.2f}", "AVG IMPORTANCE"),
+        (str(total_accesses), "TOTAL ACCESSES"),
+        (str(len(categories)), "CATEGORIES"),
     ]
     for col, (num, lbl) in zip(cols, stats):
         with col:
@@ -631,36 +994,30 @@ elif page == "📊 Stats":
     st.markdown("---")
 
     if categories:
-        st.markdown("### Memory by Category")
-        # Simple bar chart using Streamlit
+        st.markdown("<div class='nav-label' style='margin-top:8px;'>Memory by Category</div>", unsafe_allow_html=True)
         import pandas as pd
-
         df = pd.DataFrame(list(categories.items()), columns=["Category", "Count"])
         df = df.sort_values("Count", ascending=False)
-        st.bar_chart(df.set_index("Category"), color="#6366f1")
+        st.bar_chart(df.set_index("Category"), color="#00f0ff")
 
-    st.markdown("### Top Memories by Importance")
+    st.markdown("<div class='nav-label' style='margin-top:16px;'>Top Memories by Importance</div>", unsafe_allow_html=True)
     top = sorted(memories, key=lambda m: m.get("importance", 0), reverse=True)[:3]
     for mem in top:
         render_memory_card(mem)
 
     st.markdown("---")
-    st.markdown("### Architecture")
-    st.markdown(
-        """
-        ```
-        Streamlit UI
-             │
-             ▼
-        FastAPI Backend  (uvicorn, async)
-             │
-        ┌────┴──────────┐
-        │               │
-        SQLite          ChromaDB
-        (metadata)   (embeddings)
-             │
-             ▼
-        OpenAI / Ollama  (LLM + embeddings)
-        ```
-        """
-    )
+    st.markdown("<div class='nav-label' style='margin-top:8px;'>Architecture</div>", unsafe_allow_html=True)
+    st.code("""
+  Streamlit UI  (:8501)
+       │
+       ▼
+  FastAPI Backend  (:8000)  [uvicorn, async]
+       │
+  ┌────┴──────────┐
+  │               │
+  SQLite        ChromaDB  (:8001)
+  (metadata)  (embeddings)
+       │
+       ▼
+  Ollama / OpenAI  (LLM + embeddings)
+""", language=None)
