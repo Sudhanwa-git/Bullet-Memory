@@ -1,26 +1,26 @@
 <div align="center">
-  <h1>⚡ Bullet Memory OS</h1>
-  <p><b>A persistent, semantic Memory OS for LLM Agents</b></p>
-  <p><i>Extracts high-signal facts, deduplicates context via vector search, and auto-generates fine-tuning datasets while your agents run.</i></p>
+  <h1>BULLET MEMORY</h1>
+  <p><b> BULLET MEMORY is a Agentic Memory OS built for AI agents that helps AI agent extract, store and maintain context + Auto-generates a structured dataset required for fine tuning a model through extracting important Data from the AI agent.
+Data that gets collected each run gets logged in the memory OS and forms structured memories that help the agent improve and enhance the outputs each time. </b></p>
 </div>
 
 ---
 
-## What is Bullet Memory?
+##  What is Bullet Memory?
 
 Traditional LLMs have amnesia—every prompt starts from zero. 
 
-**Bullet Memory** is a lightweight, production-grade **Memory OS** for your agents. It sits between your application and your LLM, acting as a persistent brain. It doesn't just store chat logs; it automatically extracts, deduplicates, and permanently remembers high-signal *knowledge* (facts, skills, preferences, and agent observations).
+**Bullet Memory** is a lightweight, production-grade **Memory OS** for your agents. It sits between your application and your LLM, acting as a persistent brain. It doesn't just store chat logs; it extracts, deduplicates, and permanently remembers high-signal *knowledge* (facts, skills, preferences, and agent observations).
 
-As your agents run, Bullet Memory simultaneously formats this extracted knowledge into a continuous **auto-generated JSONL fine-tuning dataset**, ready to train your custom models.
+As your agents run, Bullet Memory simultaneously streams this extracted knowledge into a continuous **auto-generated fine-tuning dataset** straight to your local disk.
 
-### System Architecture
+### The Magic SYSTEM DESIGN-:
 
 ```mermaid
 graph TD
     A[Your App / AI Agent] -->|Chats & Agent Events| B(Bullet Memory OS)
     B --> C{Semantic Extraction}
-    C -->|Stores Metadata| E[Relational SQLite DB]
+    C -->|Stores JSON| E[Relational SQLite DB]
     C -->|Extracts Math Vectors| D[Chroma Vector DB]
     E --> F((Auto Fine-Tuning Datasets))
     D -->|Retrieves Perfect Context| G[Augmented LLM Response]
@@ -29,42 +29,44 @@ graph TD
 
 ---
 
-## 🌟 Core Features
+## Why Use It?
 
 * **Agentic Memory**: Let your agents build their own long-term context across multiple sessions.
-* **Semantic Search**: Understands the *meaning* of memories via ChromaDB to retrieve exactly what the LLM needs at that exact moment.
-* **Continuous Fine-Tuning**: Every memory created can be instantly exported into an OpenAI-formatted JSONL dataset via the UI or API.
-* **Lightning Fast**: Designed for local inference and async I/O using FastAPI and SQLAlchemy Async.
-* **Integrated OS Dashboard**: A beautifully designed Streamlit interface to monitor the vector vault, manually ingest documents, and interact with a demo chatbot.
+* **Semantic Search**: It doesn't just keyword match; it understands the *meaning* of the memories to retrieve exactly what the LLM needs at that exact moment.
+* **Continuous Fine-Tuning**: Literally an OS that produces training data. Every memory created is automatically appended to a ready-to-train JSONL dataset on your machine.
+* **Lightning Fast**: Designed for local inference using optimizations like concurrent Ollama batch processing.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-The easiest way to run the entire stack (FastAPI Backend, ChromaDB, and Streamlit UI) is via Docker Compose.
+### 1. Install
 
-### 1. Configure
 ```bash
-git clone https://github.com/Sudhanwa-git/Bullet-Memory.git
-cd Bullet-Memory
+pip install -e ".[dev]"
+```
+
+### 2. Configure
+
+```bash
 cp .env.example .env
+# Set your keys or point it to your local Ollama instance!
 ```
-*(Optionally edit `.env` to point to a specific LLM provider or local Ollama instance)*
 
-### 2. Run the OS
+### 3. Run the OS
+
 ```bash
-docker-compose up --build
+uvicorn app.main:app --reload
 ```
 
-### 3. Access
-* **Memory OS UI (Streamlit)**: `http://localhost:8501`
-* **API Documentation**: `http://localhost:8000/docs`
+> **UI Dashboard:** `http://localhost:8000`  
+> **API Docs:** `http://localhost:8000/docs`
 
 ---
 
-## 💻 Developer API
+##  Integrating With Your Agents
 
-You can use the built-in Streamlit UI to visualize the system, but Bullet Memory is designed to be the headless backend for *your* agents.
+You can use the built-in UI to chat with it, but Bullet Memory is designed to be the backend for *your* agents.
 
 ### Example: Storing an Agent Event
 
@@ -92,30 +94,27 @@ Content-Type: application/json
   "message": "Write a quick script for my backend."
 }
 ```
-*The engine intercepts this, fetches the semantic memory about Alice preferring Python, injects it into the system prompt, and responds with Python code.*
+*The engine will intercept this, invisibly fetch the memory about Alice preferring Python, inject it into the prompt, and respond with Python code.*
 
 ---
 
-## 📂 Where is my Data?
+##  Where is my Data?
 
 Your data belongs to you, stored entirely locally.
 
-* **`app/data/bullet_memory.db`**: The structured relational database tracking metadata, sources, and access counts.
-* **`chroma_db/`**: The local vector store for semantic similarity search.
-* **Dataset Export**: Hit the `/export` endpoint or use the UI tab to download your `JSONL` fine-tuning dataset at any time.
+* **`bullet_memory_v5.db`**: The structured relational database. Viewable with any standard SQLite browser.
+* **`chroma_db_v5/`**: The local vector store for semantic similarity.
+* **`datasets/`**: The goldmine. The auto-generated JSONL files containing your OpenAI-formatted fine-tuning datasets, continuously updated in the background.
 
 ---
 
-## 🛠️ Tech Stack
+##  Built With
 
-* **FastAPI** (Async REST API framework)
-* **ChromaDB** (Vector Database)
-* **SQLAlchemy & aiosqlite** (Async ORM & Relational Persistence)
-* **Streamlit** (Memory OS Dashboard UI)
-* **Pydantic V2** (Data Validation)
+* **FastAPI** for blazing fast endpoints.
+* **ChromaDB** for local vector embeddings.
+* **SQLAlchemy** (Async SQLite) for structured relational persistence.
+* **Ollama & OpenAI** adapters included out-of-the-box.
 
 ---
 
-<div align="center">
-  <i>Stop prompting from scratch. Start building agents with a past.</i>
-</div>
+**Bullet Memory** — Stop prompting from scratch. Start building agents with a past.
