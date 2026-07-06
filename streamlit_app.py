@@ -1,6 +1,6 @@
 """
 Bullet Memory — Streamlit UI
-Centered, chat-first, highly intuitive Memory OS visualization.
+Memory OS interface with integrated Chatbot Demo (No collapsible sidebar)
 """
 from __future__ import annotations
 
@@ -44,10 +44,10 @@ DEMO_REPLIES = {
 # ── Page config ───────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="Bullet Memory",
+    page_title="Bullet Memory OS",
     page_icon="⚡",
-    layout="centered",
-    initial_sidebar_state="expanded",
+    layout="wide",
+    initial_sidebar_state="collapsed", # We are abandoning the native sidebar
 )
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
@@ -61,33 +61,35 @@ html, body, [class*="css"], .stApp {
     background: #000000 !important;
     color: #e0e0e0 !important;
 }
-header[data-testid="stHeader"], footer, #MainMenu, .stDeployButton { display: none !important; }
 
-/* Main container (centered and clean) */
+/* Hide native sidebar and streamit chrome completely */
+[data-testid="stSidebar"], [data-testid="collapsedControl"], header[data-testid="stHeader"], footer, #MainMenu, .stDeployButton { display: none !important; }
+
+/* Main container */
 .main .block-container {
-    padding: 3rem 1rem !important;
-    max-width: 800px !important;
-    margin: 0 auto !important;
+    padding: 3rem 4rem !important;
+    max-width: 1400px !important;
 }
 
-/* Sidebar */
-[data-testid="stSidebar"] {
-    background: #050505 !important;
-    border-right: 1px solid #1a1a1a !important;
+/* OS Panel (Left Column) */
+.os-panel {
+    background: #050505;
+    border-right: 1px solid #1a1a1a;
+    height: 100%;
+    padding-right: 2rem;
 }
-/* Force sidebar always open by hiding collapse controls */
-[data-testid="collapsedControl"],
-[data-testid="stSidebar"] button[kind="header"] { 
-    display: none !important; 
-}
-[data-testid="stSidebarContent"] { padding: 2rem 1.5rem !important; }
-.sb-logo-name { font-size: 16px; font-weight: 700; color: #00f0ff; display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; }
-.sb-dot { width: 8px; height: 8px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 10px #00f0ff; animation: blink 2s infinite; }
-.sb-status { display: inline-block; font-size: 11px; padding: 4px 8px; border-radius: 4px; margin-top: 1rem; border: 1px solid #1a1a1a; background: #0a0a0a; color: #888; }
-.sb-live { border-color: #00f0ff; color: #00f0ff; background: rgba(0,240,255,0.05); }
-.stRadio label { font-size: 13px !important; color: #aaa !important; padding: 8px !important; border-radius: 4px !important; transition: 0.2s !important; }
-.stRadio label:hover, .stRadio [aria-checked="true"] ~ div { color: #00f0ff !important; background: rgba(0,240,255,0.05) !important; }
-.stRadio [data-baseweb="radio"] div { border-color: transparent !important; background: transparent !important; }
+.os-logo-name { font-size: 20px; font-weight: 700; color: #00f0ff; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.os-dot { width: 10px; height: 10px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 12px #00f0ff; animation: blink 2s infinite; }
+.os-tagline { font-size: 11px; color: #666; letter-spacing: 0.1em; margin-bottom: 2rem; text-transform: uppercase; }
+
+.os-section-title { font-size: 10px; font-weight: 700; color: #444; letter-spacing: 0.15em; text-transform: uppercase; margin: 2rem 0 1rem; border-bottom: 1px solid #1a1a1a; padding-bottom: 6px; }
+
+.os-feature { margin-bottom: 1rem; }
+.os-feature-title { font-size: 12px; color: #00f0ff; font-weight: 700; margin-bottom: 4px; }
+.os-feature-desc { font-size: 11px; color: #888; line-height: 1.5; }
+
+.os-status { display: inline-block; font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid #1a1a1a; background: #0a0a0a; color: #888; font-weight: 700; letter-spacing: 0.1em; }
+.os-live { border-color: rgba(0,240,255,0.4); color: #00f0ff; background: rgba(0,240,255,0.05); }
 
 /* Chat inputs and forms */
 .stTextInput input, .stTextArea textarea, .stChatInput textarea {
@@ -95,12 +97,6 @@ header[data-testid="stHeader"], footer, #MainMenu, .stDeployButton { display: no
 }
 .stTextInput input:focus, .stTextArea textarea:focus, .stChatInput textarea:focus {
     border-color: #00f0ff !important; box-shadow: 0 0 0 1px #00f0ff !important;
-}
-.stButton > button, .stFormSubmitButton > button {
-    background: #0a0a0a !important; border: 1px solid #1a1a1a !important; color: #888 !important; border-radius: 6px !important;
-}
-.stButton > button:hover, .stFormSubmitButton > button:hover {
-    border-color: #00f0ff !important; color: #00f0ff !important; background: rgba(0,240,255,0.05) !important;
 }
 
 /* Memory Cards */
@@ -173,167 +169,148 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "### Welcome to Bullet Memory OS\n\nI am an agent augmented with a durable semantic memory vault. \n\n- **Ask me a question:** I will retrieve facts from my memory to answer you.\n- **Tell me something new:** I will automatically extract, deduplicate, and store the facts.",
+            "content": "I am connected to the Memory OS. Ask me anything, and I will retrieve context from the vault in real-time.",
             "retrieved": [],
             "extracted": []
         }
     ]
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layout: OS Panel (Left) & Chatbot Demo (Right)
+# ═══════════════════════════════════════════════════════════════════════════════
 
-with st.sidebar:
+col_os, col_demo = st.columns([1, 2.5], gap="large")
+
+# ─── OS Panel (Left Column) ──────────────────────────────────────────────────
+with col_os:
     st.markdown("""
-    <div class="sb-logo-name"><div class="sb-dot"></div>Bullet Memory</div>
+    <div class="os-logo-name"><div class="os-dot"></div>Bullet Memory OS</div>
+    <div class="os-tagline">Semantic Memory Engine</div>
     """, unsafe_allow_html=True)
 
-    page = st.radio("Navigation", ["Chat (Memory OS)", "Vault", "Ingest"], label_visibility="collapsed")
-
     if st.session_state.backend_ok:
-        st.markdown("<div class='sb-status sb-live'>● BACKEND CONNECTED</div>", unsafe_allow_html=True)
+        st.markdown("<div class='os-status os-live'>● BACKEND CONNECTED</div>", unsafe_allow_html=True)
     else:
-        st.markdown("<div class='sb-status'>○ DEMO MODE</div>", unsafe_allow_html=True)
+        st.markdown("<div class='os-status'>○ DEMO MODE</div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='position:absolute; bottom:20px; font-size:10px; color:#555;'>FastAPI · ChromaDB · Streamlit</div>", unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# 1. Chat (Memory OS Demo)
-# ═══════════════════════════════════════════════════════════════════════════════
-
-if page == "Chat (Memory OS)":
+    st.markdown("<div class='os-section-title'>Core Features</div>", unsafe_allow_html=True)
     
-    # Render chat history
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-            
-            # Show memory context inline via expander
-            if msg.get("retrieved"):
-                with st.expander(f"🧠 {len(msg['retrieved'])} memories retrieved for context"):
-                    for m in msg["retrieved"]:
-                        render_memory_card(m)
-            
-            if msg.get("extracted"):
-                with st.expander(f"⚡ {len(msg['extracted'])} new memories extracted and stored"):
-                    for m in msg["extracted"]:
-                        render_memory_card(m)
+    st.markdown("""
+    <div class="os-feature">
+        <div class="os-feature-title">Semantic Retrieval</div>
+        <div class="os-feature-desc">Queries ChromaDB for relevant past context before the LLM generates a response.</div>
+    </div>
+    <div class="os-feature">
+        <div class="os-feature-title">Auto-Extraction</div>
+        <div class="os-feature-desc">Background LLM tasks automatically distill chat history into structured facts.</div>
+    </div>
+    <div class="os-feature">
+        <div class="os-feature-title">Deduplication</div>
+        <div class="os-feature-desc">Cosine similarity prevents redundant facts from polluting the vector space.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Input
+    st.markdown("<div class='os-section-title'>Architecture</div>", unsafe_allow_html=True)
+    st.code("""UI       : Streamlit
+API      : FastAPI
+Vector   : ChromaDB
+LLM      : Ollama
+DB       : SQLite Async""", language="text")
+
+    st.markdown("<div class='os-section-title'>Vault Stats</div>", unsafe_allow_html=True)
+    if st.session_state.backend_ok:
+        data = _api_get(f"/memories/{DEMO_USER_ID}")
+        mems = data.get("memories", []) if data else []
+    else:
+        mems = DEMO_MEMORIES
+        
+    st.markdown(f"""
+    <div style="font-size:12px; color:#aaa; line-height:1.8;">
+        Total Memories: <b>{len(mems)}</b><br>
+        Vector Dimensions: <b>768</b><br>
+        Access Hits: <b>{sum(m.get('access_count', 0) for m in mems)}</b>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ─── Chatbot Demo (Right Column) ─────────────────────────────────────────────
+with col_demo:
+    
+    st.markdown("<div style='font-size:18px; font-weight:700; color:#fff; margin-bottom:4px;'>Live Demonstration</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:12px; color:#666; margin-bottom:2rem;'>Interact with the agent. The OS will inject memory context inline.</div>", unsafe_allow_html=True)
+
+    chat_container = st.container(height=600, border=False)
+    
+    with chat_container:
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+                
+                # Show memory context inline via expander
+                if msg.get("retrieved"):
+                    with st.expander(f"🧠 {len(msg['retrieved'])} memories retrieved for context"):
+                        for m in msg["retrieved"]:
+                            render_memory_card(m)
+                
+                if msg.get("extracted"):
+                    with st.expander(f"⚡ {len(msg['extracted'])} new memories extracted and stored"):
+                        for m in msg["extracted"]:
+                            render_memory_card(m)
+
+    # Chat Input
     if prompt := st.chat_input("Message the Memory OS..."):
-        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        
+        with chat_container:
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-        # Generate assistant response
-        with st.chat_message("assistant"):
-            with st.spinner("Processing memory..."):
-                if st.session_state.backend_ok:
-                    data = _api_post("/chat", {"user_id": DEMO_USER_ID, "message": prompt})
-                    if data:
-                        answer = data.get("response", "No response.")
-                        retrieved = data.get("retrieved_context", [])
+            with st.chat_message("assistant"):
+                with st.spinner("Processing memory..."):
+                    if st.session_state.backend_ok:
+                        data = _api_post("/chat", {"user_id": DEMO_USER_ID, "message": prompt})
+                        if data:
+                            answer = data.get("response", "No response.")
+                            retrieved = data.get("retrieved_context", [])
+                            
+                            st.markdown(answer)
+                            if retrieved:
+                                with st.expander(f"🧠 {len(retrieved)} memories retrieved for context"):
+                                    for m in retrieved:
+                                        render_memory_card(m)
+                                        
+                            st.session_state.messages.append({
+                                "role": "assistant", 
+                                "content": answer,
+                                "retrieved": retrieved,
+                                "extracted": []
+                            })
+                        else:
+                            st.error("Backend error.")
+                            st.session_state.backend_ok = False
+                    else:
+                        pl = prompt.lower()
+                        if any(w in pl for w in ("what", "explain", "how", "bullet")):
+                            demo_resp = DEMO_REPLIES["what"]
+                        elif any(w in pl for w in ("skill", "know", "proficient", "experience")):
+                            demo_resp = DEMO_REPLIES["skill"]
+                        else:
+                            demo_resp = DEMO_REPLIES["default"]
+                        
+                        time.sleep(0.5)
+                        answer = demo_resp["text"]
+                        retrieved = demo_resp["retrieved"]
                         
                         st.markdown(answer)
-                        if retrieved:
-                            with st.expander(f"🧠 {len(retrieved)} memories retrieved for context"):
-                                for m in retrieved:
-                                    render_memory_card(m)
-                                    
+                        with st.expander(f"🧠 {len(retrieved)} memories retrieved for context"):
+                            for m in retrieved:
+                                render_memory_card(m)
+                                
                         st.session_state.messages.append({
                             "role": "assistant", 
                             "content": answer,
                             "retrieved": retrieved,
-                            "extracted": [] # Background task extraction not returned sync yet
+                            "extracted": []
                         })
-                    else:
-                        st.error("Backend error.")
-                        st.session_state.backend_ok = False
-                else:
-                    # Demo mode response
-                    pl = prompt.lower()
-                    if any(w in pl for w in ("what", "explain", "how", "bullet")):
-                        demo_resp = DEMO_REPLIES["what"]
-                    elif any(w in pl for w in ("skill", "know", "proficient", "experience")):
-                        demo_resp = DEMO_REPLIES["skill"]
-                    else:
-                        demo_resp = DEMO_REPLIES["default"]
-                    
-                    time.sleep(0.5)
-                    answer = demo_resp["text"]
-                    retrieved = demo_resp["retrieved"]
-                    
-                    st.markdown(answer)
-                    with st.expander(f"🧠 {len(retrieved)} memories retrieved for context"):
-                        for m in retrieved:
-                            render_memory_card(m)
-                            
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": answer,
-                        "retrieved": retrieved,
-                        "extracted": []
-                    })
         st.rerun()
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# 2. Memory Vault
-# ═══════════════════════════════════════════════════════════════════════════════
-
-elif page == "Vault":
-    st.markdown("### 🧠 Memory Vault")
-    st.caption("Browse all persistent memories stored in ChromaDB.")
-    st.divider()
-
-    cat_filter = st.selectbox("Category Filter", ["All", "PREFERENCE", "SKILL", "GOAL", "FACT", "TOOL_RESULT", "INSTRUCTION"])
-    
-    # Load memories
-    mems = []
-    if st.session_state.backend_ok:
-        params = {"user_id": DEMO_USER_ID}
-        if cat_filter != "All": params["category"] = cat_filter
-        data = _api_get(f"/memories/{DEMO_USER_ID}", **params)
-        if data: mems = data.get("memories", [])
-    else:
-        mems = list(DEMO_MEMORIES)
-        if cat_filter != "All": mems = [m for m in mems if m["category"] == cat_filter]
-
-    if not mems:
-        st.info("No memories found.")
-    else:
-        st.caption(f"{len(mems)} memories found")
-        for m in sorted(mems, key=lambda x: x.get("importance", 0), reverse=True):
-            render_memory_card(m)
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# 3. Ingest
-# ═══════════════════════════════════════════════════════════════════════════════
-
-elif page == "Ingest":
-    st.markdown("### ⚡ Manual Ingestion")
-    st.caption("Paste raw text. The LLM will extract facts, deduplicate them via cosine similarity, and store them.")
-    st.divider()
-
-    with st.form("ingest_form"):
-        raw_text = st.text_area("Raw Text (logs, notes, conversations...)", height=150)
-        source_type = st.selectbox("Source Type", ["manual", "api_ingest", "agent_event", "chat"])
-        submitted = st.form_submit_button("Extract & Store")
-
-        if submitted:
-            if not raw_text.strip():
-                st.warning("Provide text.")
-            elif not st.session_state.backend_ok:
-                st.info("Demo Mode: In a live backend, this passes through the extraction pipeline.")
-            else:
-                with st.spinner("Extracting..."):
-                    res = _api_post("/ingest/raw", {
-                        "user_id": DEMO_USER_ID, "text": raw_text,
-                        "source_type": source_type, "tags": []
-                    })
-                    if res:
-                        st.success(f"{res.get('memories_stored', 0)} memories successfully extracted and stored.")
-                    else:
-                        st.error("Ingest failed.")
