@@ -1,7 +1,7 @@
 <div align="center">
   <h1>BULLET MEMORY</h1>
-  <p><b> BULLET MEMORY is a Agentic Memory OS built for AI agents that helps agent extract, store and maintain context + auto-generates a strcutured dataset required for fine tuning a model through extracting important Data from the AI agent. 
-Data that gets collected each run gets logged and forms structured memories that help the agent improve and enhance the outputs each time. </b></p>
+  <p><b> BULLET MEMORY is a Agentic Memory OS built for AI agents that helps AI agent extract, store and maintain context + Auto-generates a structured dataset required for fine tuning a model through extracting important Data from the AI agent.
+Data that gets collected each run gets logged in the memory OS and forms structured memories that help the agent improve and enhance the outputs each time. </b></p>
 </div>
 
 ---
