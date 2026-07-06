@@ -13,7 +13,7 @@ Traditional LLMs have amnesia—every prompt starts from zero.
 
 As your agents run, Bullet Memory simultaneously streams this extracted knowledge into a continuous **auto-generated fine-tuning dataset** straight to your local disk.
 
-### The Magic:
+### The Magic SYSTEM DESIGN-:
 
 ```mermaid
 graph TD
