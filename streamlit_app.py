@@ -72,10 +72,6 @@ html, body, [class*="css"], .stApp {
     max-width: 1600px !important;
 }
 
-/* Layout Columns */
-.chat-col { padding-right: 1rem; }
-.os-col { padding-left: 1rem; border-left: 1px solid #1a1a1a; min-height: 80vh; }
-
 /* OS Panel styling */
 .os-logo-name { font-size: 22px; font-weight: 700; color: #00f0ff; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .os-dot { width: 10px; height: 10px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 12px #00f0ff; animation: blink 2s infinite; }
@@ -190,7 +186,6 @@ col_demo, col_os = st.columns([1, 1.4], gap="large")
 
 # ─── 1. Chatbot Demo (Left Column) ───────────────────────────────────────────
 with col_demo:
-    st.markdown("<div class='chat-col'>", unsafe_allow_html=True)
     st.markdown("<div style='font-size:14px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px;'>Live Chatbot Demo</div>", unsafe_allow_html=True)
     st.markdown("<div style='font-size:11px; color:#666; margin-bottom:1.5rem;'>The agent interacts with the OS via FastAPI.</div>", unsafe_allow_html=True)
 
@@ -255,12 +250,9 @@ with col_demo:
                         st.session_state.messages.append({"role": "assistant", "content": demo_resp["text"], "retrieved": demo_resp["retrieved"], "extracted": []})
         st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
 
 # ─── 2. OS Panel / Features (Right Column) ───────────────────────────────────
 with col_os:
-    st.markdown("<div class='os-col'>", unsafe_allow_html=True)
     
     # OS Header
     st.markdown("""
@@ -375,5 +367,3 @@ Model    : Ollama (LLM + Embeddings)""", language="text")
             )
         else:
             st.warning("No data meets the criteria or backend is unreachable.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
