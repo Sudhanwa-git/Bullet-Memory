@@ -68,6 +68,8 @@ services:
       - "8501:8501"
     environment:
       - API_BASE_URL=http://bullet-memory:8000
+    volumes:
+      - ./streamlit_app.py:/app/streamlit_app.py
     networks:
       - bullet-net
     depends_on:

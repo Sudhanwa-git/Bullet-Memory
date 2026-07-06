@@ -75,6 +75,11 @@ header[data-testid="stHeader"], footer, #MainMenu, .stDeployButton { display: no
     background: #050505 !important;
     border-right: 1px solid #1a1a1a !important;
 }
+/* Force sidebar always open by hiding collapse controls */
+[data-testid="collapsedControl"],
+[data-testid="stSidebar"] button[kind="header"] { 
+    display: none !important; 
+}
 [data-testid="stSidebarContent"] { padding: 2rem 1.5rem !important; }
 .sb-logo-name { font-size: 16px; font-weight: 700; color: #00f0ff; display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; }
 .sb-dot { width: 8px; height: 8px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 10px #00f0ff; animation: blink 2s infinite; }
