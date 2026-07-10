@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Databases
+*.db
+*.sqlite3
+chroma_db_v5/
+
+# Docker
+docker-compose.yml
+Dockerfile
+Dockerfile.streamlit
+.dockerignore
