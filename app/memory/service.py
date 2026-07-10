@@ -35,6 +35,7 @@ from app.memory.models import (
 from app.memory.retriever import MemoryRetriever
 from app.memory.scorer import ImportanceScorer
 from app.memory.updater import MemoryUpdater
+from app.memory.redactor import PIIRedactor
 
 logger = structlog.get_logger(__name__)
 
@@ -133,7 +134,7 @@ class MemoryService:
 
         candidate = ExtractedMemory(
             category=category,
-            content=request.content,
+            content=PIIRedactor.redact(request.content),
             importance=request.importance,
             confidence=1.0,
             source_text=request.content,
@@ -168,7 +169,7 @@ class MemoryService:
             session_id=request.session_id,
             category=request.category,
             source_type=request.source_type,
-            content=request.content,
+            content=PIIRedactor.redact(request.content),
             importance=request.importance,
             confidence=request.confidence,
             tags=request.tags,
@@ -283,6 +284,10 @@ class MemoryService:
             source_text=source_text,
         )
 
+        # Redact PII before scoring and storing
+        for c in candidates:
+            c.content = PIIRedactor.redact(c.content)
+
         accepted = self._scorer.filter(candidates)
         if not accepted:
             logger.info("memory_service.pipeline.nothing_accepted", user_id=user_id)
@@ -298,19 +303,20 @@ class MemoryService:
         
         import asyncio
         
-        async def process_candidate(candidate):
-            embedding = await self._embedder.embed(candidate.content)
-            memory, is_new = await self._updater.deduplicate_or_create(
+        # Batch embed all candidates in one network call
+        embeddings = await self._embedder.embed_batch([c.content for c in accepted])
+
+        results = await asyncio.gather(*(
+            self._updater.deduplicate_or_create(
                 user_id=user_id,
-                candidate=candidate,
-                embedding=embedding,
+                candidate=c,
+                embedding=e,
                 agent_id=agent_id,
                 session_id=session_id,
                 source_type=source_type,
             )
-            return memory, is_new
-
-        results = await asyncio.gather(*(process_candidate(c) for c in accepted))
+            for c, e in zip(accepted, embeddings)
+        ))
         
         for memory, is_new in results:
             if is_new:

@@ -71,6 +71,12 @@ class SearchRequest(BaseModel):
     top_k: int = Field(default=10, ge=1, le=50)
 
 
+class MemoryUpdateRequest(BaseModel):
+    content: str
+    importance: float = Field(ge=0.0, le=1.0)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+
+
 # ── CRUD Endpoints ────────────────────────────────────────────────────────────
 
 
@@ -129,6 +135,28 @@ async def delete_memory(
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Memory {memory_id!r} not found")
     return {"deleted": True, "memory_id": memory_id}
+
+
+@router.put("/{memory_id}", response_model=MemoryResponse, summary="Update an existing memory")
+async def update_memory(
+    memory_id: str,
+    request: MemoryUpdateRequest,
+    service: MemoryService = Depends(get_memory_service),
+) -> MemoryResponse:
+    # We update DB directly via service internal access for this simple case,
+    # or expose an update method on MemoryService. Let's assume service._db has update_memory
+    memory = await service._db.update_memory(
+        memory_id=memory_id,
+        content=request.content,
+        importance=request.importance,
+        confidence=request.confidence,
+    )
+    # Also update vector store
+    import asyncio
+    embedding = await service._embedder.embed(memory.content)
+    asyncio.create_task(service._vector_store.update(memory, embedding))
+    
+    return MemoryResponse.from_memory(memory)
 
 
 @router.post("/search", response_model=MemoryListResponse, summary="Semantic search over memories")

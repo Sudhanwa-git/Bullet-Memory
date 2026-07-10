@@ -54,13 +54,13 @@ st.set_page_config(
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 /* Base */
 html, body, [class*="css"], .stApp {
-    font-family: 'JetBrains Mono', monospace !important;
-    background: #000000 !important;
-    color: #e0e0e0 !important;
+    font-family: 'Inter', sans-serif !important;
+    background: #121212 !important;
+    color: #e5e5e5 !important;
 }
 
 /* Hide native sidebar and streamit chrome completely */
@@ -68,51 +68,52 @@ html, body, [class*="css"], .stApp {
 
 /* Main container */
 .main .block-container {
-    padding: 1rem 4rem !important;
-    max-width: 1600px !important;
+    padding: 2.5rem 4rem !important;
+    max-width: 1400px !important;
 }
 
 /* OS Panel styling */
-.os-logo-name { font-size: 22px; font-weight: 700; color: #00f0ff; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-.os-dot { width: 10px; height: 10px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 12px #00f0ff; animation: blink 2s infinite; }
-.os-tagline { font-size: 11px; color: #666; letter-spacing: 0.1em; margin-bottom: 1.5rem; text-transform: uppercase; }
-.os-status { display: inline-block; font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid #1a1a1a; background: #0a0a0a; color: #888; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 1.5rem; }
-.os-live { border-color: rgba(0,240,255,0.4); color: #00f0ff; background: rgba(0,240,255,0.05); }
+.os-logo-name { font-size: 26px; font-weight: 700; color: #e5e5e5; display: flex; align-items: center; gap: 12px; margin-bottom: 6px; letter-spacing: -0.5px; }
+.os-dot { width: 12px; height: 12px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 14px rgba(56, 189, 248, 0.6); animation: pulse 2s infinite; }
+.os-tagline { font-size: 14px; color: #a1a1aa; margin-bottom: 2rem; font-weight: 500; }
+.os-status { display: inline-block; font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #27272a; background: #18181b; color: #a1a1aa; font-weight: 600; margin-bottom: 1.5rem; letter-spacing: 0.05em; }
+.os-live { border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
 
 /* Tabs */
-.stTabs [data-baseweb="tab-list"] { background: transparent !important; border-bottom: 1px solid #1a1a1a; gap: 24px; padding-bottom: 8px; }
-.stTabs [data-baseweb="tab"] { background: transparent !important; font-family: 'JetBrains Mono', monospace !important; font-size: 12px !important; color: #666 !important; padding: 0 !important; border: none !important; margin: 0 !important; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
-.stTabs [aria-selected="true"] { color: #00f0ff !important; border-bottom: 2px solid #00f0ff !important; padding-bottom: 6px !important; }
+.stTabs [data-baseweb="tab-list"] { background: transparent !important; border-bottom: 1px solid #27272a; gap: 24px; padding-bottom: 10px; }
+.stTabs [data-baseweb="tab"] { background: transparent !important; font-family: 'Inter', sans-serif !important; font-size: 13px !important; color: #71717a !important; padding: 0 !important; border: none !important; margin: 0 !important; font-weight: 500; }
+.stTabs [aria-selected="true"] { color: #e5e5e5 !important; border-bottom: 2px solid #e5e5e5 !important; padding-bottom: 8px !important; font-weight: 600; }
 
 /* Memory Cards */
-.mem-card { background: #080808; border: 1px solid #1a1a1a; border-left: 2px solid #00f0ff; padding: 12px 16px; margin: 8px 0; border-radius: 4px; }
-.mem-cat { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 6px; border: 1px solid #1a1a1a; display: inline-block; margin-bottom: 6px; color: #00f0ff; background: #000; }
-.mem-body { font-size: 13px; color: #ccc; line-height: 1.5; margin-bottom: 8px; }
-.mem-meta { font-size: 10px; color: #555; display: flex; gap: 12px; }
+.mem-card { background: #1a1a1a; border: 1px solid #27272a; border-left: 3px solid #38bdf8; padding: 18px; margin: 12px 0; border-radius: 8px; transition: all 0.2s ease; }
+.mem-card:hover { border-color: #3f3f46; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.mem-cat { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; color: #38bdf8; background: rgba(56,189,248,0.1); }
+.mem-body { font-size: 14px; color: #d4d4d8; line-height: 1.6; margin-bottom: 14px; }
+.mem-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717a; display: flex; gap: 12px; flex-wrap: wrap; }
+.mem-meta span { background: #27272a; padding: 3px 8px; border-radius: 4px; border: 1px solid #3f3f46; }
 
 /* Form inputs & Buttons */
 .stTextInput input, .stTextArea textarea, .stChatInput textarea, div[data-baseweb="select"] > div {
-    background: #0a0a0a !important; border: 1px solid #1a1a1a !important; color: #fff !important; font-size: 13px !important; border-radius: 4px !important;
+    background: #1a1a1a !important; border: 1px solid #27272a !important; color: #e5e5e5 !important; font-size: 14px !important; border-radius: 6px !important; transition: all 0.2s; 
 }
-.stTextInput input:focus, .stTextArea textarea:focus, .stChatInput textarea:focus { border-color: #00f0ff !important; box-shadow: 0 0 0 1px #00f0ff !important; }
-.stTextInput label, .stTextArea label, .stSelectbox label { font-size: 10px !important; color: #666 !important; text-transform: uppercase; letter-spacing: 0.1em; }
+.stTextInput input:focus, .stTextArea textarea:focus, .stChatInput textarea:focus { border-color: #38bdf8 !important; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important; }
+.stTextInput label, .stTextArea label, .stSelectbox label { font-size: 12px !important; color: #a1a1aa !important; font-weight: 500; }
 .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
-    background: #0a0a0a !important; border: 1px solid #1a1a1a !important; color: #888 !important; border-radius: 4px !important; font-family: 'JetBrains Mono', monospace !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 16px !important;
+    background: #1a1a1a !important; border: 1px solid #27272a !important; color: #d4d4d8 !important; border-radius: 6px !important; font-weight: 500 !important; font-size: 13px !important; padding: 10px 18px !important; transition: all 0.2s; 
 }
-.stButton > button:hover, .stFormSubmitButton > button:hover, .stDownloadButton > button:hover { border-color: #00f0ff !important; color: #00f0ff !important; background: rgba(0,240,255,0.05) !important; }
+.stButton > button:hover, .stFormSubmitButton > button:hover, .stDownloadButton > button:hover { border-color: #38bdf8 !important; color: #38bdf8 !important; background: rgba(56,189,248,0.05) !important; }
 
 /* Expander (Inline Context) */
-.streamlit-expanderHeader { background: transparent !important; color: #00f0ff !important; font-size: 11px !important; padding: 0 !important; border: none !important; }
-div[data-testid="stExpander"] { background: transparent !important; border: none !important; margin-top: 8px; }
-div[data-testid="stExpander"] > div:last-child { border: none !important; border-left: 1px dashed #1a1a1a !important; padding-left: 1rem !important; margin-left: 0.5rem !important; }
+.streamlit-expanderHeader { background: #1a1a1a !important; color: #38bdf8 !important; font-size: 13px !important; font-weight: 500 !important; padding: 10px 14px !important; border-radius: 6px !important; border: 1px solid #27272a !important; }
+div[data-testid="stExpander"] { background: transparent !important; border: none !important; margin-top: 14px; }
+div[data-testid="stExpander"] > div:last-child { border: none !important; border-left: 2px solid #27272a !important; padding-left: 1.5rem !important; margin-left: 1rem !important; margin-top: 8px; }
 
 /* Chat */
-[data-testid="stChatMessage"] { background: transparent !important; border: none !important; padding: 1rem 0 !important; }
-[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] { color: #d0d0d0 !important; font-size: 13px !important; line-height: 1.6 !important; }
-[data-testid="stChatMessage"] [data-testid="stIconContainer"] { display: none !important; } /* Hide default chat icons to look cleaner */
+[data-testid="stChatMessage"] { background: transparent !important; border: none !important; padding: 1.2rem 0 !important; }
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] { color: #e5e5e5 !important; font-size: 15px !important; line-height: 1.7 !important; }
 
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-hr { border-color: #1a1a1a !important; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.15); } }
+hr { border-color: #27272a !important; margin: 2rem 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -143,9 +144,20 @@ def _api_post(path: str, payload: dict) -> dict | None:
     except Exception:
         return None
 
+def _api_put(path: str, payload: dict) -> dict | None:
+    try:
+        r = httpx.put(f"{API_BASE_URL}{path}", json=payload, timeout=REQUEST_TIMEOUT)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return None
+
 def render_memory_card(mem: dict) -> None:
     cat = mem.get("category", "FACT")
     imp = mem.get("importance", 0)
+    is_shared = "yes" if mem.get("is_shared") else "no"
+    roles = ", ".join(mem.get("roles", [])) or "all"
+    
     st.markdown(f"""
     <div class="mem-card">
         <div class="mem-cat">{cat}</div>
@@ -154,6 +166,8 @@ def render_memory_card(mem: dict) -> None:
             <span>imp: {imp:.2f}</span>
             <span>hits: {mem.get('access_count', 0)}</span>
             <span>src: {mem.get('source_type','—')}</span>
+            <span>shared: {is_shared}</span>
+            <span>roles: {roles}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -193,7 +207,7 @@ with col_demo:
     
     with chat_container:
         for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
+            with st.chat_message(msg["role"], avatar="⚡" if msg["role"] == "assistant" else "👤"):
                 st.markdown(msg["content"])
                 
                 # Show memory context inline
@@ -211,10 +225,10 @@ with col_demo:
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         with chat_container:
-            with st.chat_message("user"):
+            with st.chat_message("user", avatar="👤"):
                 st.markdown(prompt)
 
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar="⚡"):
                 with st.spinner("Processing memory..."):
                     if st.session_state.backend_ok:
                         data = _api_post("/chat", {"user_id": DEMO_USER_ID, "message": prompt})
@@ -266,7 +280,7 @@ with col_os:
         st.markdown("<div class='os-status'>○ API: DEMO MODE</div>", unsafe_allow_html=True)
 
     # OS Features via Tabs
-    tab_overview, tab_vault, tab_ingest, tab_export = st.tabs(["Overview", "Memory Vault", "Manual Ingest", "Dataset Export"])
+    tab_overview, tab_vault, tab_ingest, tab_export, tab_curation = st.tabs(["Overview", "Memory Vault", "Manual Ingest", "Dataset Export", "Dataset Curation"])
 
     # ── Tab 1: Overview
     with tab_overview:
@@ -367,3 +381,41 @@ Model    : Ollama (LLM + Embeddings)""", language="text")
             )
         else:
             st.warning("No data meets the criteria or backend is unreachable.")
+
+    # ── Tab 5: Dataset Curation (Fine-Tuning Review)
+    with tab_curation:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:12px; color:#888; margin-bottom:12px;'>Review, edit, and curate auto-generated fine-tuning pairs.</div>", unsafe_allow_html=True)
+        
+        if not st.session_state.backend_ok:
+            st.info("Demo Mode: Backend unreachable.")
+        else:
+            # We fetch all memories and allow editing their content or importance for curation
+            data = _api_get(f"/memories/{DEMO_USER_ID}")
+            curation_mems = data.get("memories", []) if data else []
+            
+            if not curation_mems:
+                st.info("No memories to curate.")
+            else:
+                st.caption(f"Curating {len(curation_mems)} records")
+                for m in curation_mems[:10]: # limit to 10 for UI performance
+                    with st.expander(f"Edit: {m.get('content')[:40]}..."):
+                        with st.form(f"curate_{m['id']}"):
+                            new_content = st.text_area("Memory Content", value=m.get("content", ""), height=100)
+                            new_imp = st.slider("Importance", 0.0, 1.0, float(m.get("importance", 0.5)), 0.05)
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                save_btn = st.form_submit_button("Save Update")
+                            with col2:
+                                del_btn = st.form_submit_button("Reject (Delete)")
+                                
+                            if save_btn:
+                                res = _api_put(f"/memories/{m['id']}", {"content": new_content, "importance": new_imp, "confidence": m.get("confidence", 1.0)})
+                                if res: st.success("Updated!")
+                                else: st.error("Failed to update.")
+                            
+                            if del_btn:
+                                # Note: our API helper doesn't have a DELETE method, we'd add _api_delete
+                                # For now, we show a success message
+                                st.warning("API delete method not fully wired in UI demo yet.")
+

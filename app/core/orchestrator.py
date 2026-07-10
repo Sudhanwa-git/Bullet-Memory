@@ -14,6 +14,7 @@ from app.adapters.llm import LLMAdapter
 from app.core.config import settings
 from app.core.prompts import DEFAULT_SYSTEM_PROMPT, MEMORY_CONTEXT_HEADER
 from app.memory.service import MemoryService
+from app.memory.cache import SemanticCache
 
 logger = structlog.get_logger(__name__)
 
@@ -24,9 +25,10 @@ class MemoryOrchestrator:
     Business logic lives in MemoryService and adapters — this class only orchestrates.
     """
 
-    def __init__(self, memory_service: MemoryService, llm: LLMAdapter) -> None:
+    def __init__(self, memory_service: MemoryService, llm: LLMAdapter, cache: SemanticCache | None = None) -> None:
         self._memory = memory_service
         self._llm = llm
+        self._cache = cache
 
     async def chat(
         self,
@@ -44,6 +46,13 @@ class MemoryOrchestrator:
         """
         t0 = time.perf_counter()
         log = logger.bind(user_id=user_id)
+
+        if self._cache:
+            cached_response = await self._cache.get(user_id, message)
+            if cached_response:
+                cached_response["latency_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+                log.info("orchestrator.chat.cache_hit", latency_ms=cached_response["latency_ms"])
+                return cached_response
 
         # ── 1. Retrieve ───────────────────────────────────────────────────────
         log.info("orchestrator.retrieve.start")
@@ -77,12 +86,17 @@ class MemoryOrchestrator:
 
         retrieved_context = [{"category": m.category, "content": m.content} for m in memories]
 
-        return {
+        payload = {
             "response": response_text,
             "memories_retrieved": len(memories),
             "retrieved_context": retrieved_context,
             "latency_ms": total_ms,
         }
+        
+        if self._cache:
+            await self._cache.set(user_id, message, payload)
+            
+        return payload
 
     async def process_memory_background(
         self, user_id: str, message: str, response_text: str
@@ -117,6 +131,14 @@ class MemoryOrchestrator:
         t0 = time.perf_counter()
         log = logger.bind(user_id=user_id)
 
+        if self._cache:
+            cached_response = await self._cache.get(user_id, message)
+            if cached_response:
+                log.info("orchestrator.chat_stream.cache_hit")
+                yield f"data: {json.dumps({'type': 'context', 'data': cached_response.get('retrieved_context', [])})}\n\n"
+                yield f"data: {json.dumps({'type': 'token', 'data': cached_response.get('response', '')})}\n\n"
+                return
+
         log.info("orchestrator.retrieve_stream.start")
         memories = await self._memory.retrieve(
             user_id=user_id,
@@ -139,6 +161,14 @@ class MemoryOrchestrator:
             yield f"data: {json.dumps({'type': 'token', 'data': chunk})}\n\n"
 
         final_text = "".join(full_response)
+
+        if self._cache:
+            payload = {
+                "response": final_text,
+                "memories_retrieved": len(memories),
+                "retrieved_context": retrieved_context,
+            }
+            await self._cache.set(user_id, message, payload)
 
         if background_tasks:
             background_tasks.add_task(

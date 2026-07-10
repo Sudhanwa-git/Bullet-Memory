@@ -96,6 +96,9 @@ class Memory(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_accessed_at: datetime | None = None
+    is_shared: bool = Field(default=False, description="Can other agents/users access this")
+    expires_at: datetime | None = Field(default=None, description="When this memory should automatically decay")
+    roles: list[str] = Field(default_factory=list, description="RBAC roles allowed to access this memory")
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -182,3 +185,24 @@ class FineTuneRecord(BaseModel):
 
     messages: list[FineTuneMessage]
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+# ── Knowledge Graph ───────────────────────────────────────────────────────────
+
+
+class Node(BaseModel):
+    """A single entity in the Knowledge Graph."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    memory_id: str | None = None
+    label: str
+    properties: dict[str, Any] = Field(default_factory=dict)
+
+
+class Edge(BaseModel):
+    """A relationship between two nodes in the Knowledge Graph."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    source_node_id: str
+    target_node_id: str
+    relationship_type: str
+    properties: dict[str, Any] = Field(default_factory=dict)
+

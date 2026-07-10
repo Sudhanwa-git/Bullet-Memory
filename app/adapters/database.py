@@ -53,6 +53,28 @@ class MemoryRow(Base):
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
     last_accessed_at = Column(DateTime, nullable=True)
+    is_shared = Column(Integer, nullable=False, default=0)  # sqlite bool
+    expires_at = Column(DateTime, nullable=True)
+    roles_json = Column(Text, default="[]")
+
+
+class NodeRow(Base):
+    __tablename__ = "nodes"
+
+    id = Column(String, primary_key=True)
+    memory_id = Column(String, nullable=True, index=True)
+    label = Column(String, nullable=False, index=True)
+    properties_json = Column(Text, default="{}")
+
+
+class EdgeRow(Base):
+    __tablename__ = "edges"
+
+    id = Column(String, primary_key=True)
+    source_node_id = Column(String, nullable=False, index=True)
+    target_node_id = Column(String, nullable=False, index=True)
+    relationship_type = Column(String, nullable=False, index=True)
+    properties_json = Column(Text, default="{}")
 
 
 # ── Adapter ───────────────────────────────────────────────────────────────────
@@ -114,6 +136,9 @@ class DatabaseAdapter:
             metadata_json=json.dumps(memory.metadata),
             created_at=memory.created_at,
             updated_at=memory.updated_at,
+            is_shared=1 if memory.is_shared else 0,
+            expires_at=memory.expires_at,
+            roles_json=json.dumps(memory.roles),
         )
         async with self._session_factory() as session:
             session.add(row)
@@ -139,6 +164,9 @@ class DatabaseAdapter:
             metadata_json=json.dumps(memory.metadata),
             created_at=memory.created_at,
             updated_at=memory.updated_at,
+            is_shared=1 if memory.is_shared else 0,
+            expires_at=memory.expires_at,
+            roles_json=json.dumps(memory.roles),
         )
         async with self._session_factory() as session:
             session.add(row)
@@ -222,6 +250,93 @@ class DatabaseAdapter:
                 await session.delete(row)
                 await session.commit()
 
+    async def search_memories_text(self, user_id: str, query: str) -> list[Memory]:
+        """Simple lexical search across content and tags using ILIKE for Hybrid Search."""
+        async with self._session_factory() as session:
+            q = select(MemoryRow).where(
+                MemoryRow.user_id == user_id,
+                (MemoryRow.content.ilike(f"%{query}%")) | (MemoryRow.tags_json.ilike(f"%{query}%"))
+            ).order_by(MemoryRow.created_at.desc()).limit(10)
+            result = await session.execute(q)
+            return [self._to_model(r) for r in result.scalars()]
+
+    # ── Graph Methods ─────────────────────────────────────────────────────────
+
+    async def create_node(self, label: str, memory_id: str | None = None, properties: dict | None = None) -> str:
+        import uuid
+        node_id = str(uuid.uuid4())
+        row = NodeRow(
+            id=node_id,
+            memory_id=memory_id,
+            label=label,
+            properties_json=json.dumps(properties or {})
+        )
+        async with self._session_factory() as session:
+            session.add(row)
+            await session.commit()
+        return node_id
+
+    async def create_edge(self, source_id: str, target_id: str, rel_type: str, properties: dict | None = None) -> str:
+        import uuid
+        edge_id = str(uuid.uuid4())
+        row = EdgeRow(
+            id=edge_id,
+            source_node_id=source_id,
+            target_node_id=target_id,
+            relationship_type=rel_type,
+            properties_json=json.dumps(properties or {})
+        )
+        async with self._session_factory() as session:
+            session.add(row)
+            await session.commit()
+        return edge_id
+
+    async def get_graph_context_for_memories(self, memory_ids: list[str]) -> list[str]:
+        """Multi-Hop Graph RAG: Given a set of retrieved memory IDs, fetch related node relationships."""
+        if not memory_ids:
+            return []
+            
+        async with self._session_factory() as session:
+            # 1. Get all nodes associated with these memories
+            nodes_stmt = select(NodeRow).where(NodeRow.memory_id.in_(memory_ids))
+            nodes_result = await session.execute(nodes_stmt)
+            start_nodes = {n.id: n.label for n in nodes_result.scalars().all()}
+            
+            if not start_nodes:
+                return []
+                
+            node_ids = list(start_nodes.keys())
+            
+            # 2. Get all edges connected to these nodes (1-hop traversal)
+            from sqlalchemy import or_
+            edges_stmt = select(EdgeRow).where(
+                or_(EdgeRow.source_node_id.in_(node_ids), EdgeRow.target_node_id.in_(node_ids))
+            )
+            edges_result = await session.execute(edges_stmt)
+            edges = edges_result.scalars().all()
+            
+            if not edges:
+                return []
+                
+            # 3. We need labels for the adjacent nodes we just discovered
+            all_node_ids = set(node_ids)
+            for e in edges:
+                all_node_ids.add(e.source_node_id)
+                all_node_ids.add(e.target_node_id)
+                
+            all_nodes_stmt = select(NodeRow).where(NodeRow.id.in_(list(all_node_ids)))
+            all_nodes_result = await session.execute(all_nodes_stmt)
+            node_labels = {n.id: n.label for n in all_nodes_result.scalars().all()}
+            
+            # 4. Format into readable graph triples
+            context_triples = []
+            for e in edges:
+                src_label = node_labels.get(e.source_node_id, "Unknown")
+                tgt_label = node_labels.get(e.target_node_id, "Unknown")
+                context_triples.append(f"({src_label}) -[{e.relationship_type}]-> ({tgt_label})")
+                
+            return list(set(context_triples))
+
     # ── Helpers ───────────────────────────────────────────────────────────────
 
     @staticmethod
@@ -243,4 +358,8 @@ class DatabaseAdapter:
             created_at=row.created_at,
             updated_at=row.updated_at,
             last_accessed_at=row.last_accessed_at,
+            is_shared=bool(row.is_shared),
+            expires_at=row.expires_at,
+            roles=json.loads(row.roles_json or "[]"),
         )
+

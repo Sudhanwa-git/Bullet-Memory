@@ -49,7 +49,10 @@ def _build_services() -> tuple[MemoryService, MemoryOrchestrator]:
         vector_store=vector_store,
     )
 
-    orchestrator = MemoryOrchestrator(memory_service=memory_service, llm=llm)
+    from app.memory.cache import SemanticCache
+    semantic_cache = SemanticCache(embedder)
+    
+    orchestrator = MemoryOrchestrator(memory_service=memory_service, llm=llm, cache=semantic_cache)
     return memory_service, orchestrator
 
 
