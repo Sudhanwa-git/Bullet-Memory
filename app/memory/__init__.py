@@ -1,9 +1,7 @@
 """Memory package — core engines of Bullet Memory OS."""
 
-from app.memory.context_builder import ContextBuilder
-from app.memory.working_memory import WorkingMemoryEngine, WorkingMemoryState
-from app.memory.episodes import EpisodeEngine, ReflectionEngine, Episode
-from app.memory.prediction import PredictionEngine
+# Lightweight exports — avoid eager imports to prevent circular import issues.
+# Consumers should import directly from submodules for performance-sensitive paths.
 
 __all__ = [
     "ContextBuilder",
