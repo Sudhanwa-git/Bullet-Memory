@@ -1,2 +1,5 @@
+# Streamlit Cloud deployment dependencies.
+# The full application dependency list is in pyproject.toml.
 streamlit>=1.35.0
 httpx>=0.27.0
+orjson>=3.10.0

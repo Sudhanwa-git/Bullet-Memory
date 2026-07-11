@@ -12,22 +12,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.memory.working_memory import WorkingMemoryEngine, WorkingMemoryState
+from app.api.deps import get_working_memory_engine
+from app.memory.working_memory import WorkingMemoryEngine
 
 router = APIRouter(prefix="/working-memory", tags=["Working Memory"])
-
-# Singleton engine (initialized once per process)
-_engine: WorkingMemoryEngine | None = None
-
-
-def get_engine() -> WorkingMemoryEngine:
-    global _engine
-    if _engine is None:
-        _engine = WorkingMemoryEngine()
-    return _engine
 
 
 # ── Request Models ─────────────────────────────────────────────────────────────
@@ -66,9 +57,10 @@ class UpdateScratchpadRequest(BaseModel):
 
 
 @router.post("/sessions", summary="Create a new working memory session")
-async def create_session(req: CreateSessionRequest) -> dict:
-    engine = get_engine()
-    await engine.initialise()
+async def create_session(
+    req: CreateSessionRequest,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     state = await engine.create(
         session_id=req.session_id,
         agent_id=req.agent_id,
@@ -79,9 +71,10 @@ async def create_session(req: CreateSessionRequest) -> dict:
 
 
 @router.get("/sessions/{session_id}", summary="Get or resume a working memory session")
-async def get_session(session_id: str) -> dict:
-    engine = get_engine()
-    await engine.initialise()
+async def get_session(
+    session_id: str,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     state = await engine.get(session_id)
     if state is None:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
@@ -89,20 +82,29 @@ async def get_session(session_id: str) -> dict:
 
 
 @router.post("/sessions/{session_id}/plan", summary="Set the agent's execution plan")
-async def set_plan(session_id: str, req: SetPlanRequest) -> dict:
-    engine = get_engine()
-    await engine.initialise()
+async def set_plan(
+    session_id: str,
+    req: SetPlanRequest,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     try:
         await engine.set_plan(session_id, req.plan)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     state = await engine.get(session_id)
-    return {"session_id": session_id, "plan": state.plan if state else [], "checkpoint_id": state.checkpoint_id if state else ""}
+    return {
+        "session_id": session_id,
+        "plan": state.plan if state else [],
+        "checkpoint_id": state.checkpoint_id if state else "",
+    }
 
 
 @router.post("/sessions/{session_id}/steps/complete", summary="Mark a step as completed")
-async def complete_step(session_id: str, req: CompleteStepRequest) -> dict:
-    engine = get_engine()
+async def complete_step(
+    session_id: str,
+    req: CompleteStepRequest,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     try:
         await engine.complete_step(session_id, req.step)
     except ValueError as e:
@@ -116,8 +118,11 @@ async def complete_step(session_id: str, req: CompleteStepRequest) -> dict:
 
 
 @router.post("/sessions/{session_id}/variables", summary="Set a working memory variable")
-async def set_variable(session_id: str, req: SetVariableRequest) -> dict:
-    engine = get_engine()
+async def set_variable(
+    session_id: str,
+    req: SetVariableRequest,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     try:
         await engine.set_variable(session_id, req.key, req.value)
     except ValueError as e:
@@ -126,8 +131,11 @@ async def set_variable(session_id: str, req: SetVariableRequest) -> dict:
 
 
 @router.post("/sessions/{session_id}/tool-outputs", summary="Log a tool call output")
-async def add_tool_output(session_id: str, req: ToolOutputRequest) -> dict:
-    engine = get_engine()
+async def add_tool_output(
+    session_id: str,
+    req: ToolOutputRequest,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     try:
         await engine.add_tool_output(session_id, req.tool, req.output)
     except ValueError as e:
@@ -136,8 +144,11 @@ async def add_tool_output(session_id: str, req: ToolOutputRequest) -> dict:
 
 
 @router.post("/sessions/{session_id}/scratchpad", summary="Update the reasoning scratchpad")
-async def update_scratchpad(session_id: str, req: UpdateScratchpadRequest) -> dict:
-    engine = get_engine()
+async def update_scratchpad(
+    session_id: str,
+    req: UpdateScratchpadRequest,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     try:
         await engine.update_scratchpad(session_id, req.text)
     except ValueError as e:
@@ -146,7 +157,9 @@ async def update_scratchpad(session_id: str, req: UpdateScratchpadRequest) -> di
 
 
 @router.delete("/sessions/{session_id}", summary="Delete a working memory session")
-async def delete_session(session_id: str) -> dict:
-    engine = get_engine()
+async def delete_session(
+    session_id: str,
+    engine: WorkingMemoryEngine = Depends(get_working_memory_engine),
+) -> dict:
     await engine.delete(session_id)
     return {"session_id": session_id, "status": "deleted"}

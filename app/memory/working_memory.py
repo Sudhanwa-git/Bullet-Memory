@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from sqlalchemy import Column, DateTime, String, Text, select
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
@@ -139,7 +139,7 @@ class WorkingMemoryEngine:
     async def initialise(self) -> None:
         """Create the working_memory table if it doesn't exist."""
         async with self._engine.begin() as conn:
-            await conn.execute(__import__("sqlalchemy").text("""
+            await conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS working_memory (
                     session_id TEXT PRIMARY KEY,
                     agent_id TEXT NOT NULL,
@@ -181,9 +181,7 @@ class WorkingMemoryEngine:
         """Restore working memory from SQLite after a crash or restart."""
         async with self._session_factory() as session:
             result = await session.execute(
-                __import__("sqlalchemy").text(
-                    "SELECT state_json FROM working_memory WHERE session_id = :sid"
-                ).bindparams(sid=session_id)
+                text("SELECT state_json FROM working_memory WHERE session_id = :sid").bindparams(sid=session_id)
             )
             row = result.fetchone()
         if row is None:
@@ -238,9 +236,7 @@ class WorkingMemoryEngine:
         self._cache.pop(session_id, None)
         async with self._session_factory() as session:
             await session.execute(
-                __import__("sqlalchemy").text(
-                    "DELETE FROM working_memory WHERE session_id = :sid"
-                ).bindparams(sid=session_id)
+                text("DELETE FROM working_memory WHERE session_id = :sid").bindparams(sid=session_id)
             )
             await session.commit()
         logger.info("working_memory.deleted", session_id=session_id)
@@ -264,7 +260,7 @@ class WorkingMemoryEngine:
         data = state.to_dict()
         async with self._session_factory() as session:
             await session.execute(
-                __import__("sqlalchemy").text("""
+                text("""
                     INSERT INTO working_memory 
                         (session_id, agent_id, user_id, state_json, checkpoint_id, created_at, updated_at)
                     VALUES 

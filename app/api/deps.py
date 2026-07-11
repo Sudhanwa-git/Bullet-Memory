@@ -20,6 +20,7 @@ from app.memory.retriever import MemoryRetriever
 from app.memory.scorer import ImportanceScorer
 from app.memory.service import MemoryService
 from app.memory.updater import MemoryUpdater
+from app.memory.working_memory import WorkingMemoryEngine
 
 
 @lru_cache(maxsize=1)
@@ -36,7 +37,7 @@ def _build_services() -> tuple[MemoryService, MemoryOrchestrator]:
     embedder = EmbeddingGenerator(embedding_adapter)
     extractor = MemoryExtractor(llm)
     scorer = ImportanceScorer()
-    retriever = MemoryRetriever(vector_store, embedder)
+    retriever = MemoryRetriever(vector_store, embedder, db)
     updater = MemoryUpdater(db, vector_store, embedder)
 
     memory_service = MemoryService(
@@ -51,9 +52,15 @@ def _build_services() -> tuple[MemoryService, MemoryOrchestrator]:
 
     from app.memory.cache import SemanticCache
     semantic_cache = SemanticCache(embedder)
-    
+
     orchestrator = MemoryOrchestrator(memory_service=memory_service, llm=llm, cache=semantic_cache)
     return memory_service, orchestrator
+
+
+@lru_cache(maxsize=1)
+def _build_working_memory_engine() -> WorkingMemoryEngine:
+    """Build and initialise the WorkingMemoryEngine once per process."""
+    return WorkingMemoryEngine()
 
 
 def get_memory_service() -> MemoryService:
@@ -64,3 +71,7 @@ def get_memory_service() -> MemoryService:
 def get_orchestrator() -> MemoryOrchestrator:
     _, orchestrator = _build_services()
     return orchestrator
+
+
+def get_working_memory_engine() -> WorkingMemoryEngine:
+    return _build_working_memory_engine()
