@@ -12,8 +12,6 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.api.router import router
 from app.core.config import settings
@@ -60,15 +58,6 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(router)
-
-    # Mount frontend static files
-    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
-    if os.path.exists(frontend_path):
-        app.mount("/static", StaticFiles(directory=frontend_path), name="static")
-
-        @app.get("/")
-        async def serve_frontend():
-            return FileResponse(os.path.join(frontend_path, "index.html"))
 
     return app
 
