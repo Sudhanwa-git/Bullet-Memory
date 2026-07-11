@@ -22,7 +22,7 @@ def _get_api_url() -> str:
 
 API_BASE_URL    = _get_api_url()
 DEMO_USER_ID    = "demo-user"
-REQUEST_TIMEOUT = 12.0
+REQUEST_TIMEOUT = 120.0
 
 
 # ── Demo data ─────────────────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ def render_memory_card(mem: dict) -> None:
 
 def check_backend() -> bool:
     try:
-        return get_http_client().get("/health", timeout=2.0).status_code == 200
+        return get_http_client().get("/health", timeout=5.0).status_code == 200
     except:
         return False
 
