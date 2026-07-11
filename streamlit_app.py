@@ -120,9 +120,13 @@ hr { border-color: #27272a !important; margin: 2rem 0 !important; }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+@st.cache_resource
+def get_http_client() -> httpx.Client:
+    return httpx.Client(base_url=API_BASE_URL, timeout=REQUEST_TIMEOUT)
+
 def _api_get(path: str, **params) -> dict | list | None:
     try:
-        r = httpx.get(f"{API_BASE_URL}{path}", params=params, timeout=REQUEST_TIMEOUT)
+        r = get_http_client().get(path, params=params)
         r.raise_for_status()
         return r.json()
     except Exception:
@@ -130,7 +134,7 @@ def _api_get(path: str, **params) -> dict | list | None:
 
 def _api_get_text(path: str, **params) -> str | None:
     try:
-        r = httpx.get(f"{API_BASE_URL}{path}", params=params, timeout=REQUEST_TIMEOUT)
+        r = get_http_client().get(path, params=params)
         r.raise_for_status()
         return r.text
     except Exception:
@@ -138,7 +142,7 @@ def _api_get_text(path: str, **params) -> str | None:
 
 def _api_post(path: str, payload: dict) -> dict | None:
     try:
-        r = httpx.post(f"{API_BASE_URL}{path}", json=payload, timeout=REQUEST_TIMEOUT)
+        r = get_http_client().post(path, json=payload)
         r.raise_for_status()
         return r.json()
     except Exception:
@@ -146,7 +150,7 @@ def _api_post(path: str, payload: dict) -> dict | None:
 
 def _api_put(path: str, payload: dict) -> dict | None:
     try:
-        r = httpx.put(f"{API_BASE_URL}{path}", json=payload, timeout=REQUEST_TIMEOUT)
+        r = get_http_client().put(path, json=payload)
         r.raise_for_status()
         return r.json()
     except Exception:
@@ -177,7 +181,7 @@ def render_memory_card(mem: dict) -> None:
 
 if "backend_ok" not in st.session_state:
     try:
-        st.session_state.backend_ok = (httpx.get(f"{API_BASE_URL}/health", timeout=2.0).status_code == 200)
+        st.session_state.backend_ok = (get_http_client().get("/health", timeout=2.0).status_code == 200)
     except:
         st.session_state.backend_ok = False
 

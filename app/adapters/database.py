@@ -17,7 +17,7 @@ import json
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import Column, DateTime, Float, Integer, String, Text, select
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, select, event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -83,6 +83,16 @@ class EdgeRow(Base):
 class DatabaseAdapter:
     def __init__(self) -> None:
         self._engine = create_async_engine(settings.DATABASE_URL, echo=False)
+        
+        @event.listens_for(self._engine.sync_engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            if "sqlite" in settings.DATABASE_URL:
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA cache_size=-64000")
+                cursor.close()
+                
         self._session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
             self._engine, expire_on_commit=False
         )

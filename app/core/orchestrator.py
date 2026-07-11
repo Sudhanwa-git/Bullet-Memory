@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.prompts import DEFAULT_SYSTEM_PROMPT, MEMORY_CONTEXT_HEADER
 from app.memory.service import MemoryService
 from app.memory.cache import SemanticCache
+from app.memory.context_builder import ContextBuilder
 
 logger = structlog.get_logger(__name__)
 
@@ -29,6 +30,7 @@ class MemoryOrchestrator:
         self._memory = memory_service
         self._llm = llm
         self._cache = cache
+        self._context_builder = ContextBuilder(max_tokens=2000)
 
     async def chat(
         self,
@@ -68,6 +70,12 @@ class MemoryOrchestrator:
             count=len(memories),
             latency_ms=round((time.perf_counter() - t_ret) * 1000, 2),
         )
+
+        # ── 1.5 Filter and build dense context ────────────────────────────────
+        log.info("orchestrator.context_builder.start")
+        t_ctx = time.perf_counter()
+        memories = self._context_builder.build_context(message, memories)
+        log.info("orchestrator.context_builder.done", latency_ms=round((time.perf_counter() - t_ctx) * 1000, 2))
 
         # ── 2. Build prompt ───────────────────────────────────────────────────
         system = self._build_system_prompt(system_prompt or DEFAULT_SYSTEM_PROMPT, memories)
@@ -146,6 +154,8 @@ class MemoryOrchestrator:
             top_k=settings.TOP_K_RETRIEVAL,
             threshold=settings.SIMILARITY_THRESHOLD,
         )
+
+        memories = self._context_builder.build_context(message, memories)
 
         # Yield the retrieved context as the first SSE chunk
         retrieved_context = [{"category": m.category, "content": m.content} for m in memories]
