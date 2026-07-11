@@ -7,7 +7,7 @@ packages = ["app"]
 
 [project]
 name = "bullet-memory"
-version = "0.1.0"
+version = "0.2.0"
 description = "A lightweight, production-oriented semantic memory engine for LLM agents"
 readme = "README.md"
 requires-python = ">=3.11"

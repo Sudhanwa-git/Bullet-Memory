@@ -23,7 +23,7 @@ router.include_router(working_memory.router)
 async def health() -> dict:
     return {
         "status": "ok",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "llm_provider": settings.LLM_PROVIDER,
         "embedding_provider": settings.EMBEDDING_PROVIDER,
         "vector_store": settings.VECTOR_STORE_PROVIDER,
