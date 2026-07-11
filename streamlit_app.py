@@ -179,11 +179,18 @@ def render_memory_card(mem: dict) -> None:
 
 # ── Session State ─────────────────────────────────────────────────────────────
 
-if "backend_ok" not in st.session_state:
+def check_backend() -> bool:
     try:
-        st.session_state.backend_ok = (get_http_client().get("/health", timeout=2.0).status_code == 200)
+        return get_http_client().get("/health", timeout=2.0).status_code == 200
     except:
-        st.session_state.backend_ok = False
+        return False
+
+if "backend_ok" not in st.session_state:
+    st.session_state.backend_ok = check_backend()
+
+# If it failed initially (e.g. backend took a second to start), try once more on interaction
+if not st.session_state.backend_ok:
+    st.session_state.backend_ok = check_backend()
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -282,6 +289,9 @@ with col_os:
         st.markdown("<div class='os-status os-live'>● API: ONLINE</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='os-status'>○ API: DEMO MODE</div>", unsafe_allow_html=True)
+        if st.button("🔄 Retry Connection"):
+            st.session_state.backend_ok = check_backend()
+            st.rerun()
 
     # OS Features via Tabs
     tab_overview, tab_vault, tab_ingest, tab_export, tab_curation = st.tabs(["Overview", "Memory Vault", "Manual Ingest", "Dataset Export", "Dataset Curation"])
