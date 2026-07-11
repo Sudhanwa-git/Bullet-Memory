@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api import chat, ingest, memory
+from app.api import chat, ingest, memory, working_memory
 from app.core.config import settings
 
 router = APIRouter()
@@ -15,6 +15,7 @@ router = APIRouter()
 router.include_router(chat.router)
 router.include_router(memory.router)
 router.include_router(ingest.router)
+router.include_router(working_memory.router)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
