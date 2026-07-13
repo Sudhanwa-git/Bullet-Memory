@@ -6,12 +6,12 @@ Initialises the FastAPI app, mounts routers, and configures startup / shutdown h
 
 from __future__ import annotations
 
-import os
 from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
 
 from app.api.router import router
 from app.core.config import settings
@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     # ── Startup ──────────────────────────────────────────────────────────────
     logger.info("bullet_memory.startup", host=settings.API_HOST, port=settings.API_PORT)
 
+    os.makedirs("data", exist_ok=True)
     # Eagerly initialise the DB so tables exist before the first request
     from app.adapters.database import DatabaseAdapter
 
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         lifespan=lifespan,
+        default_response_class=ORJSONResponse,
     )
 
     app.add_middleware(

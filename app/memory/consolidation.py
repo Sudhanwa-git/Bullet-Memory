@@ -6,9 +6,6 @@ resolve contradictions, and synthesize them into higher-level insights.
 """
 from __future__ import annotations
 
-import asyncio
-import json
-from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -16,8 +13,6 @@ from pydantic import BaseModel, Field
 
 from app.adapters.database import DatabaseAdapter
 from app.adapters.llm import LLMAdapter
-from app.adapters.vector import VectorStoreAdapter
-from app.memory.embeddings import EmbeddingGenerator
 from app.memory.models import DirectMemoryRequest, MemoryCategory, SourceType
 from app.memory.service import MemoryService
 

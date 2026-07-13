@@ -35,6 +35,7 @@ class ChatResponse(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.post("", summary="Send a memory-augmented chat message (Synchronous JSON)")
 async def chat(
     request: ChatRequest,
@@ -42,7 +43,7 @@ async def chat(
     orchestrator: MemoryOrchestrator = Depends(get_orchestrator),
 ) -> ChatResponse:
     """
-    Standard JSON chat endpoint. Returns LLM response instantly, 
+    Standard JSON chat endpoint. Returns LLM response instantly,
     and handles all memory extraction in the background.
     """
     try:
@@ -51,14 +52,14 @@ async def chat(
             message=request.message,
             system_prompt=request.system_prompt,
         )
-        
+
         background_tasks.add_task(
             orchestrator.process_memory_background,
             user_id=request.user_id,
             message=request.message,
             response_text=result["response"],
         )
-        
+
         return ChatResponse(**result)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

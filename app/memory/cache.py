@@ -3,12 +3,12 @@ Semantic Caching — bypass LLM inference for semantically identical queries.
 """
 from __future__ import annotations
 
-import json
 import uuid
 from typing import Any
 
-import structlog
 import chromadb
+import orjson
+import structlog
 
 from app.core.config import settings
 from app.memory.embeddings import EmbeddingGenerator
@@ -62,14 +62,14 @@ class SemanticCache:
             meta = result.get("metadatas", [[{}]])[0][0]
             payload_str = meta.get("payload")
             if payload_str:
-                return json.loads(payload_str)
+                return orjson.loads(payload_str)
         return None
 
     async def set(self, user_id: str, query: str, response_payload: dict[str, Any]) -> None:
         """Cache the query and its LLM response payload."""
         try:
             query_embedding = await self._embedder.embed(query)
-            payload_str = json.dumps(response_payload)
+            payload_str = orjson.dumps(response_payload).decode("utf-8")
             self._collection.upsert(
                 ids=[str(uuid.uuid4())],
                 embeddings=[query_embedding],

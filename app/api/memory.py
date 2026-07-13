@@ -153,9 +153,10 @@ async def update_memory(
     )
     # Also update vector store
     import asyncio
+
     embedding = await service._embedder.embed(memory.content)
     asyncio.create_task(service._vector_store.update(memory, embedding))
-    
+
     return MemoryResponse.from_memory(memory)
 
 

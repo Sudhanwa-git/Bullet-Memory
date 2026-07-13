@@ -7,17 +7,17 @@ Keyword fallback can be added without touching this module.
 
 from __future__ import annotations
 
+import math
 import time
+from datetime import UTC, datetime
 
 import structlog
 
-from app.adapters.vector import VectorStoreAdapter
 from app.adapters.database import DatabaseAdapter
+from app.adapters.vector import VectorStoreAdapter
 from app.core.config import settings
 from app.memory.embeddings import EmbeddingGenerator
 from app.memory.models import Memory
-from datetime import datetime, UTC
-import math
 
 logger = structlog.get_logger(__name__)
 
@@ -107,6 +107,7 @@ class MemoryRetriever:
         
         if graph_triples:
             import uuid
+
             from app.memory.models import MemoryCategory, SourceType
             now = datetime.now(UTC)
             for triple in graph_triples:

@@ -67,7 +67,11 @@ async def create_session(
         user_id=req.user_id,
         goal=req.goal,
     )
-    return {"session_id": state.session_id, "status": "created", "checkpoint_id": state.checkpoint_id}
+    return {
+        "session_id": state.session_id,
+        "status": "created",
+        "checkpoint_id": state.checkpoint_id,
+    }
 
 
 @router.get("/sessions/{session_id}", summary="Get or resume a working memory session")

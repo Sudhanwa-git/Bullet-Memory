@@ -20,6 +20,8 @@ env/
 # Database / Vector Store
 *.db
 *.sqlite
+*.db-shm
+*.db-wal
 chroma_db/
 chroma_db_*/
 chroma_data/
@@ -45,4 +47,4 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
-ship.bat
+scripts/ship.bat

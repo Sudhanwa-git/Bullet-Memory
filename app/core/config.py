@@ -32,11 +32,11 @@ class Settings(BaseSettings):
     )  # nomic-embed-text=768, text-embedding-3-small=1536
 
     # ── Database ──────────────────────────────────────────────────────────────
-    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./bullet_memory.db")
+    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./data/bullet_memory.db")
 
     # ── Vector Store ──────────────────────────────────────────────────────────
     VECTOR_STORE_PROVIDER: str = Field(default="chroma", description="chroma | in_memory")
-    CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
+    CHROMA_PERSIST_DIR: str = Field(default="./data/chroma_db")
     # When set, connects to a remote ChromaDB HTTP server (e.g. in Docker)
     CHROMA_HOST: str = Field(default="")
     CHROMA_PORT: int = Field(default=8000)

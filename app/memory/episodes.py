@@ -18,7 +18,6 @@ continuously improving cognitive system.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import uuid
 from datetime import UTC, datetime
@@ -45,7 +44,9 @@ class EpisodeStatus(StrEnum):
 class EpisodeEvent:
     """A single timestamped event within an episode."""
 
-    def __init__(self, event_type: str, content: str, metadata: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, event_type: str, content: str, metadata: dict[str, Any] | None = None
+    ) -> None:
         self.event_id = str(uuid.uuid4())
         self.event_type = event_type  # e.g. "tool_call", "observation", "step_complete", "error"
         self.content = content

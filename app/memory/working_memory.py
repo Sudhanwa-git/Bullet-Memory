@@ -18,11 +18,11 @@ resume from any point with zero data loss.
 
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+import orjson
 import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -37,6 +37,7 @@ logger = structlog.get_logger(__name__)
 
 class WorkingMemoryRow:
     """Lightweight SQLAlchemy core table (no ORM Base to avoid circular imports)."""
+
     __tablename__ = "working_memory"
 
 
@@ -88,7 +89,7 @@ class WorkingMemoryState:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "WorkingMemoryState":
+    def from_dict(cls, data: dict[str, Any]) -> WorkingMemoryState:
         state = cls(
             session_id=data["session_id"],
             agent_id=data["agent_id"],
@@ -139,7 +140,8 @@ class WorkingMemoryEngine:
     async def initialise(self) -> None:
         """Create the working_memory table if it doesn't exist."""
         async with self._engine.begin() as conn:
-            await conn.execute(text("""
+            await conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS working_memory (
                     session_id TEXT PRIMARY KEY,
                     agent_id TEXT NOT NULL,
@@ -149,7 +151,8 @@ class WorkingMemoryEngine:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 )
-            """))
+            """)
+            )
         logger.info("working_memory.initialised")
 
     async def create(
@@ -181,12 +184,14 @@ class WorkingMemoryEngine:
         """Restore working memory from SQLite after a crash or restart."""
         async with self._session_factory() as session:
             result = await session.execute(
-                text("SELECT state_json FROM working_memory WHERE session_id = :sid").bindparams(sid=session_id)
+                text("SELECT state_json FROM working_memory WHERE session_id = :sid").bindparams(
+                    sid=session_id
+                )
             )
             row = result.fetchone()
         if row is None:
             return None
-        state = WorkingMemoryState.from_dict(json.loads(row[0]))
+        state = WorkingMemoryState.from_dict(orjson.loads(row[0]))
         self._cache[session_id] = state
         logger.info("working_memory.resumed", session_id=session_id)
         return state
@@ -218,11 +223,13 @@ class WorkingMemoryEngine:
     async def add_tool_output(self, session_id: str, tool: str, output: Any) -> None:
         """Append a tool call result to the working memory."""
         state = await self._require(session_id)
-        state.tool_outputs.append({
-            "tool": tool,
-            "output": output,
-            "timestamp": datetime.now(UTC).isoformat(),
-        })
+        state.tool_outputs.append(
+            {
+                "tool": tool,
+                "output": output,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        )
         await self._checkpoint(state)
 
     async def update_scratchpad(self, session_id: str, text: str) -> None:
@@ -236,7 +243,9 @@ class WorkingMemoryEngine:
         self._cache.pop(session_id, None)
         async with self._session_factory() as session:
             await session.execute(
-                text("DELETE FROM working_memory WHERE session_id = :sid").bindparams(sid=session_id)
+                text("DELETE FROM working_memory WHERE session_id = :sid").bindparams(
+                    sid=session_id
+                )
             )
             await session.commit()
         logger.info("working_memory.deleted", session_id=session_id)
@@ -273,7 +282,7 @@ class WorkingMemoryEngine:
                     sid=state.session_id,
                     aid=state.agent_id,
                     uid=state.user_id,
-                    json=json.dumps(data),
+                    json=orjson.dumps(data).decode("utf-8"),
                     cid=state.checkpoint_id,
                     cat=data["created_at"],
                     uat=data["updated_at"],

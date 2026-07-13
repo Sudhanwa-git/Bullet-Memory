@@ -119,10 +119,10 @@ class ChromaVectorStore(VectorStoreAdapter):
             similarity = 1.0 - distance  # ChromaDB cosine: distance = 1 - similarity
             if similarity >= threshold:
                 valid_ids.append(mem_id)
-                
+
         if not valid_ids:
             return []
-            
+
         memories = await db.get_memories_by_ids(valid_ids)
         return memories
 

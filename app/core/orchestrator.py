@@ -13,9 +13,9 @@ import structlog
 from app.adapters.llm import LLMAdapter
 from app.core.config import settings
 from app.core.prompts import DEFAULT_SYSTEM_PROMPT, MEMORY_CONTEXT_HEADER
-from app.memory.service import MemoryService
 from app.memory.cache import SemanticCache
 from app.memory.context_builder import ContextBuilder
+from app.memory.service import MemoryService
 
 logger = structlog.get_logger(__name__)
 
@@ -26,7 +26,9 @@ class MemoryOrchestrator:
     Business logic lives in MemoryService and adapters — this class only orchestrates.
     """
 
-    def __init__(self, memory_service: MemoryService, llm: LLMAdapter, cache: SemanticCache | None = None) -> None:
+    def __init__(
+        self, memory_service: MemoryService, llm: LLMAdapter, cache: SemanticCache | None = None
+    ) -> None:
         self._memory = memory_service
         self._llm = llm
         self._cache = cache
@@ -75,7 +77,10 @@ class MemoryOrchestrator:
         log.info("orchestrator.context_builder.start")
         t_ctx = time.perf_counter()
         memories = self._context_builder.build_context(message, memories)
-        log.info("orchestrator.context_builder.done", latency_ms=round((time.perf_counter() - t_ctx) * 1000, 2))
+        log.info(
+            "orchestrator.context_builder.done",
+            latency_ms=round((time.perf_counter() - t_ctx) * 1000, 2),
+        )
 
         # ── 2. Build prompt ───────────────────────────────────────────────────
         system = self._build_system_prompt(system_prompt or DEFAULT_SYSTEM_PROMPT, memories)
@@ -100,10 +105,10 @@ class MemoryOrchestrator:
             "retrieved_context": retrieved_context,
             "latency_ms": total_ms,
         }
-        
+
         if self._cache:
             await self._cache.set(user_id, message, payload)
-            
+
         return payload
 
     async def process_memory_background(
@@ -134,7 +139,7 @@ class MemoryOrchestrator:
         3. Stream LLM tokens
         4. Schedule background extraction when complete
         """
-        import json
+        import orjson
 
         t0 = time.perf_counter()
         log = logger.bind(user_id=user_id)
@@ -143,8 +148,8 @@ class MemoryOrchestrator:
             cached_response = await self._cache.get(user_id, message)
             if cached_response:
                 log.info("orchestrator.chat_stream.cache_hit")
-                yield f"data: {json.dumps({'type': 'context', 'data': cached_response.get('retrieved_context', [])})}\n\n"
-                yield f"data: {json.dumps({'type': 'token', 'data': cached_response.get('response', '')})}\n\n"
+                yield f"data: {orjson.dumps({'type': 'context', 'data': cached_response.get('retrieved_context', [])}).decode('utf-8')}\n\n"
+                yield f"data: {orjson.dumps({'type': 'token', 'data': cached_response.get('response', '')}).decode('utf-8')}\n\n"
                 return
 
         log.info("orchestrator.retrieve_stream.start")
@@ -159,7 +164,7 @@ class MemoryOrchestrator:
 
         # Yield the retrieved context as the first SSE chunk
         retrieved_context = [{"category": m.category, "content": m.content} for m in memories]
-        yield f"data: {json.dumps({'type': 'context', 'data': retrieved_context})}\n\n"
+        yield f"data: {orjson.dumps({'type': 'context', 'data': retrieved_context}).decode('utf-8')}\n\n"
 
         system = self._build_system_prompt(system_prompt or DEFAULT_SYSTEM_PROMPT, memories)
 
@@ -168,7 +173,7 @@ class MemoryOrchestrator:
         full_response = []
         async for chunk in self._llm.stream_chat(system=system, user=message):
             full_response.append(chunk)
-            yield f"data: {json.dumps({'type': 'token', 'data': chunk})}\n\n"
+            yield f"data: {orjson.dumps({'type': 'token', 'data': chunk}).decode('utf-8')}\n\n"
 
         final_text = "".join(full_response)
 

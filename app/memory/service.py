@@ -32,10 +32,10 @@ from app.memory.models import (
     MemoryCategory,
     SourceType,
 )
+from app.memory.redactor import PIIRedactor
 from app.memory.retriever import MemoryRetriever
 from app.memory.scorer import ImportanceScorer
 from app.memory.updater import MemoryUpdater
-from app.memory.redactor import PIIRedactor
 
 logger = structlog.get_logger(__name__)
 

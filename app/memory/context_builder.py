@@ -28,8 +28,8 @@ class ContextBuilder:
     def build_context(self, query: str, memories: list[Memory]) -> list[Memory]:
         """
         Given a list of retrieved memories, builds the optimal context window.
-        
-        It ranks memories by importance, semantic relevance (if available), 
+
+        It ranks memories by importance, semantic relevance (if available),
         and packs them into the token budget using a greedy approach.
         """
         if not memories:
@@ -37,22 +37,24 @@ class ContextBuilder:
 
         # We assume memories are already scored/ranked by the Retriever.
         # Here we just apply the token density filter to prevent prompt bloat.
-        
+
         packed_memories: list[Memory] = []
         current_tokens = 0
-        
+
         for mem in memories:
             mem_tokens = self._estimate_tokens(mem.content)
-            
+
             # If a single memory is too large, we might skip it or ideally chunk it.
             # For now, we strictly pack until we hit the budget.
             if current_tokens + mem_tokens > self.max_tokens:
-                logger.debug("context_builder.budget_exceeded", 
-                             memory_id=mem.id, 
-                             mem_tokens=mem_tokens, 
-                             current_tokens=current_tokens)
+                logger.debug(
+                    "context_builder.budget_exceeded",
+                    memory_id=mem.id,
+                    mem_tokens=mem_tokens,
+                    current_tokens=current_tokens,
+                )
                 continue
-                
+
             packed_memories.append(mem)
             current_tokens += mem_tokens
 
@@ -61,6 +63,6 @@ class ContextBuilder:
             input_memories=len(memories),
             packed_memories=len(packed_memories),
             total_tokens=current_tokens,
-            max_tokens=self.max_tokens
+            max_tokens=self.max_tokens,
         )
         return packed_memories

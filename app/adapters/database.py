@@ -13,13 +13,14 @@ Schema is intentionally rich to support:
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 
+import orjson
 import structlog
-from sqlalchemy import Column, DateTime, Float, Integer, String, Text, select, event
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, event, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 from app.memory.models import ExtractedMemory, Memory, MemoryCategory, SourceType
@@ -82,7 +83,7 @@ class EdgeRow(Base):
 
 class DatabaseAdapter:
     def __init__(self) -> None:
-        self._engine = create_async_engine(settings.DATABASE_URL, echo=False)
+        self._engine = create_async_engine(settings.DATABASE_URL, echo=False, poolclass=NullPool)
         
         @event.listens_for(self._engine.sync_engine, "connect")
         def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -141,14 +142,14 @@ class DatabaseAdapter:
             source_text=memory.source_text,
             importance=memory.importance,
             confidence=memory.confidence,
-            tags_json=json.dumps(memory.tags),
+            tags_json=orjson.dumps(memory.tags).decode("utf-8"),
             access_count=0,
-            metadata_json=json.dumps(memory.metadata),
+            metadata_json=orjson.dumps(memory.metadata).decode("utf-8"),
             created_at=memory.created_at,
             updated_at=memory.updated_at,
             is_shared=1 if memory.is_shared else 0,
             expires_at=memory.expires_at,
-            roles_json=json.dumps(memory.roles),
+            roles_json=orjson.dumps(memory.roles).decode("utf-8"),
         )
         async with self._session_factory() as session:
             session.add(row)
@@ -169,14 +170,14 @@ class DatabaseAdapter:
             source_text=memory.source_text,
             importance=memory.importance,
             confidence=memory.confidence,
-            tags_json=json.dumps(memory.tags),
+            tags_json=orjson.dumps(memory.tags).decode("utf-8"),
             access_count=0,
-            metadata_json=json.dumps(memory.metadata),
+            metadata_json=orjson.dumps(memory.metadata).decode("utf-8"),
             created_at=memory.created_at,
             updated_at=memory.updated_at,
             is_shared=1 if memory.is_shared else 0,
             expires_at=memory.expires_at,
-            roles_json=json.dumps(memory.roles),
+            roles_json=orjson.dumps(memory.roles).decode("utf-8"),
         )
         async with self._session_factory() as session:
             session.add(row)
@@ -279,7 +280,7 @@ class DatabaseAdapter:
             id=node_id,
             memory_id=memory_id,
             label=label,
-            properties_json=json.dumps(properties or {})
+            properties_json=orjson.dumps(properties or {}).decode("utf-8")
         )
         async with self._session_factory() as session:
             session.add(row)
@@ -294,7 +295,7 @@ class DatabaseAdapter:
             source_node_id=source_id,
             target_node_id=target_id,
             relationship_type=rel_type,
-            properties_json=json.dumps(properties or {})
+            properties_json=orjson.dumps(properties or {}).decode("utf-8")
         )
         async with self._session_factory() as session:
             session.add(row)
@@ -362,14 +363,14 @@ class DatabaseAdapter:
             source_text=row.source_text,
             importance=row.importance,
             confidence=row.confidence,
-            tags=json.loads(row.tags_json or "[]"),
+            tags=orjson.loads(row.tags_json or "[]"),
             access_count=row.access_count or 0,
-            metadata=json.loads(row.metadata_json or "{}"),
+            metadata=orjson.loads(row.metadata_json or "{}"),
             created_at=row.created_at,
             updated_at=row.updated_at,
             last_accessed_at=row.last_accessed_at,
             is_shared=bool(row.is_shared),
             expires_at=row.expires_at,
-            roles=json.loads(row.roles_json or "[]"),
+            roles=orjson.loads(row.roles_json or "[]"),
         )
 

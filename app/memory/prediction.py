@@ -49,11 +49,11 @@ class PredictionEngine:
         asyncio.create_task(engine.prefetch(state))
     """
 
-    def __init__(self, retriever: MemoryRetriever, cache: "SemanticCache") -> None:
+    def __init__(self, retriever: MemoryRetriever, cache: SemanticCache) -> None:
         self._retriever = retriever
         self._cache = cache
 
-    async def prefetch(self, state: "WorkingMemoryState") -> None:
+    async def prefetch(self, state: WorkingMemoryState) -> None:
         """
         Analyze current working memory and pre-warm the cache for likely queries.
 
@@ -123,7 +123,7 @@ class PredictionEngine:
             logger.error("prediction_engine.prefetch_error", query=query[:50], error=str(e))
 
     @staticmethod
-    def _build_predictive_queries(state: "WorkingMemoryState") -> list[str]:
+    def _build_predictive_queries(state: WorkingMemoryState) -> list[str]:
         """
         Build synthetic queries from working memory state.
 
