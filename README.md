@@ -102,8 +102,8 @@ Content-Type: application/json
 
 Your data belongs to you, stored entirely locally.
 
-* **`bullet_memory_v5.db`**: The structured relational database. Viewable with any standard SQLite browser.
-* **`chroma_db_v5/`**: The local vector store for semantic similarity.
+* **`data/bullet_memory.db`**: The structured relational database. Viewable with any standard SQLite browser.
+* **`data/chroma_db/`**: The local vector store for semantic similarity.
 * **`datasets/`**: The goldmine. The auto-generated JSONL files containing your OpenAI-formatted fine-tuning datasets, continuously updated in the background.
 
 ---
