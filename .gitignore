@@ -47,4 +47,5 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+*.log
 scripts/ship.bat
